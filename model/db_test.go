@@ -23,3 +23,7 @@ func TestDatabase(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestDefaultAdmin(t *testing.T) {
+
+}

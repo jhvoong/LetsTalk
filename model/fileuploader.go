@@ -2,7 +2,6 @@ package model
 
 import (
 	"io"
-	"log"
 	"os"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox/files"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox/sharing"
 	"github.com/metaclips/LetsTalk/values"
+	log "github.com/sirupsen/logrus"
 )
 
 // maxDropboxUpload is 2MiB
@@ -52,13 +52,13 @@ func newDropboxUploader(filePath string) (*dropboxUploader, error) {
 func (d *dropboxUploader) dropboxFileUploader() (string, error) {
 	defer func() {
 		if err := os.Remove(d.file.Name()); err != nil {
-			log.Println("unable to remove file", err)
+			log.Warnln("unable to remove file", err)
 		}
 	}()
 
 	if err := d.uploadFile(); err != nil {
 		// Upload file to server to be later uploaded by administrators.
-		log.Println("could not upload file, saving to database", err)
+		log.Infoln("could not upload file, saving to database", err)
 		uploadFileGridFS(d.file.Name())
 		return "", err
 	}
@@ -80,7 +80,7 @@ func (d *dropboxUploader) uploadFile() error {
 func (d *dropboxUploader) UploadFileChunked() error {
 	uploadSession, err := d.uploadClient.UploadSessionStart(files.NewUploadSessionStartArg(), &io.LimitedReader{R: d.file, N: maxDropboxUpload})
 	if err != nil {
-		log.Println("could not start upload session", err)
+		log.Warnln("could not start upload session", err)
 		return err
 	}
 
@@ -90,11 +90,11 @@ func (d *dropboxUploader) UploadFileChunked() error {
 		arg := files.NewUploadSessionAppendArg(files.NewUploadSessionCursor(uploadSession.SessionId, uint64(sentChunk)))
 
 		if err := d.uploadClient.UploadSessionAppendV2(arg, &io.LimitedReader{R: d.file, N: maxDropboxUpload}); err != nil {
-			log.Println("could not append to upload session", err)
+			log.Warnln("could not append to upload session", err)
 			return err
 		}
 
-		log.Println(sentChunk, "sent to path", d.fileFullPath, "remaining", d.fileSize)
+		log.Infoln(sentChunk, "sent to path", d.fileFullPath, "remaining", d.fileSize)
 		sentChunk += maxDropboxUpload
 	}
 
@@ -102,7 +102,7 @@ func (d *dropboxUploader) UploadFileChunked() error {
 	args := files.NewUploadSessionFinishArg(cursor, d.fileUploadInfo)
 
 	if _, err := d.uploadClient.UploadSessionFinish(args, d.file); err != nil {
-		log.Println("could not finish upload session", err)
+		log.Warnln("could not finish upload session", err)
 		return err
 	}
 

@@ -5,10 +5,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/metaclips/LetsTalk/values"
+	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -18,13 +18,13 @@ type messageBytes []byte
 func (msg messageBytes) handleCreateNewRoom() {
 	var newRoom NewRoomRequest
 	if err := json.Unmarshal(msg, &newRoom); err != nil {
-		log.Println("Could not convert to required New Room Request struct")
+		log.Warningln("Could not convert to required New Room Request struct")
 		return
 	}
 
 	roomID, err := newRoom.createNewRoom()
 	if err != nil {
-		log.Println("Unable to create a new room for user:", newRoom.Email, "err:", err.Error())
+		log.Warningln("Unable to create a new room for user:", newRoom.Email, "err:", err.Error())
 		return
 	}
 
@@ -38,7 +38,7 @@ func (msg messageBytes) handleCreateNewRoom() {
 
 	jsonContent, err := json.Marshal(userJoinedMessage)
 	if err != nil {
-		log.Println("Could not marshal to jsonByte while creating room", err.Error())
+		log.Warningln("Could not marshal to jsonByte while creating room", err.Error())
 		return
 	}
 
@@ -48,14 +48,14 @@ func (msg messageBytes) handleCreateNewRoom() {
 func (msg messageBytes) handleRequestUserToJoinRoom() {
 	var request JoinRequest
 	if err := json.Unmarshal(msg, &request); err != nil {
-		log.Println("Could not convert to required Joined Request struct")
+		log.Warningln("Could not convert to required Joined Request struct")
 		return
 	}
 
 	for _, user := range request.Users {
 		roomRegisteredUser, err := request.requestUserToJoinRoom(user)
 		if err != nil {
-			log.Println("Error while requesting to room", err)
+			log.Warningln("Error while requesting to room", err)
 			continue
 		}
 
@@ -73,7 +73,7 @@ func (msg messageBytes) handleRequestUserToJoinRoom() {
 
 		jsonContent, err := json.Marshal(data)
 		if err != nil {
-			log.Println("could not marshal to RequestUsersToJoinRoom, err:", err)
+			log.Warningln("could not marshal to RequestUsersToJoinRoom, err:", err)
 			continue
 		}
 
@@ -90,7 +90,7 @@ func (msg messageBytes) handleRequestUserToJoinRoom() {
 func (msg messageBytes) handleUserAcceptRoomRequest(joiner string) {
 	var roomRequest Joined
 	if err := json.Unmarshal(msg, &roomRequest); err != nil {
-		log.Println("Could not convert to required Join Room Request struct")
+		log.Warningln("Could not convert to required Join Room Request struct")
 		return
 	}
 
@@ -100,7 +100,7 @@ func (msg messageBytes) handleUserAcceptRoomRequest(joiner string) {
 
 	users, err := roomRequest.acceptRoomRequest()
 	if err != nil {
-		log.Println("could not join room", err)
+		log.Warningln("could not join room", err)
 		return
 	}
 
@@ -113,7 +113,7 @@ func (msg messageBytes) handleUserAcceptRoomRequest(joiner string) {
 func (msg messageBytes) handleNewMessage(author string) {
 	var newMessage Message
 	if err := json.Unmarshal(msg, &newMessage); err != nil {
-		log.Println("Could not convert to required New Message struct", err)
+		log.Warningln("Could not convert to required New Message struct", err)
 		return
 	}
 
@@ -126,13 +126,13 @@ func (msg messageBytes) handleNewMessage(author string) {
 	// Save message to database ensuring user is registered to room.
 	registeredUsers, err := newMessage.saveMessageContent()
 	if err != nil {
-		log.Println("Error saving msg to db", err, author)
+		log.Warningln("Error saving msg to db", err, author)
 		return
 	}
 
 	jsonContent, err := json.Marshal(newMessage)
 	if err != nil {
-		log.Println("Error converted message to json content", err)
+		log.Warningln("Error converted message to json content", err)
 		return
 	}
 
@@ -150,7 +150,7 @@ func (msg messageBytes) handleExitRoom(author string) {
 	}{}
 
 	if err := json.Unmarshal(msg, &data); err != nil {
-		log.Println("Could not retrieve json on exit room request", err)
+		log.Warningln("Could not retrieve json on exit room request", err)
 		return
 	}
 
@@ -161,7 +161,7 @@ func (msg messageBytes) handleExitRoom(author string) {
 	user := User{Email: data.Email}
 	registeredUsers, err := user.exitRoom(data.RoomID)
 	if err != nil {
-		log.Println("Error exiting room", err)
+		log.Warningln("Error exiting room", err)
 		return
 	}
 
@@ -180,7 +180,7 @@ func (msg messageBytes) handleExitRoom(author string) {
 func (msg messageBytes) handleNewFileUpload() {
 	file := File{}
 	if err := json.Unmarshal(msg, &file); err != nil {
-		log.Println(err)
+		log.Warningln(err)
 		return
 	}
 
@@ -207,14 +207,14 @@ func (msg messageBytes) handleNewFileUpload() {
 		}
 
 	} else {
-		log.Println("Error on handle new file upload calling UploadNewFile", err)
+		log.Warningln("Error on handle new file upload calling UploadNewFile", err)
 		data.ErrorMessage = values.ErrFileUpload.Error()
 		data.MsgType = values.UploadFileErrorMsgType
 	}
 
 	jsonContent, err := json.Marshal(&data)
 	if err != nil {
-		log.Println("Error sending marshalled ")
+		log.Warningln("Error sending marshalled ")
 		return
 	}
 
@@ -236,7 +236,7 @@ func (msg messageBytes) handleUploadFileChunk() {
 
 	if err := json.Unmarshal(msg, &data); err != nil {
 		fmt.Println(string(msg))
-		log.Println(err)
+		log.Warningln("error marshalling handle file upload struct", err)
 		return
 	}
 
@@ -262,13 +262,12 @@ func (msg messageBytes) handleUploadFileChunk() {
 	fileHash := sha256.Sum256([]byte(file.FileBinary))
 	// Check if client sent file hash is same as server generated Hash.
 	if hex.EncodeToString(fileHash[:]) != file.UniqueFileHash || !recentFileExist {
-		fmt.Println("Invalid unique hash", hex.EncodeToString(fileHash[:]), recentFileExist)
 		data.MsgType = "UploadError"
 
 		// Re-request for current chunk index.
 		jsonContent, err := json.Marshal(&data)
 		if err != nil {
-			log.Println("Could not generate jsonContent to re-request file chunk")
+			log.Warningln("Could not generate jsonContent to re-request file chunk")
 			return
 		}
 
@@ -282,14 +281,14 @@ func (msg messageBytes) handleUploadFileChunk() {
 		// File could have already been added to database?.
 		// We still request for next file chunk, if when we receive a new fille chunk,
 		// so that when we notice file corruption, we re-request from corrupted stage.
-		log.Println(err)
+		log.Warningln("error adding file chunk to server", err)
 	}
 
 	data.NextChunk = file.ChunkIndex + 1
 
 	jsonContent, err := json.Marshal(&data)
 	if err != nil {
-		log.Println("Error sending marshalled ")
+		log.Warningln("error sending marshalled data to server on handle file upload chunk")
 		return
 	}
 
@@ -297,8 +296,7 @@ func (msg messageBytes) handleUploadFileChunk() {
 }
 
 // handleUploadFileUploadComplete is called when file chunk uploads is complete.
-// File accessibility is broadcasted to other users in the room so as to download
-// file.
+// File accessibility is broadcasted to other users in the room so as to download file.
 func (msg messageBytes) handleUploadFileUploadComplete() {
 	data := struct {
 		MsgType  string `json:"msgType"`
@@ -311,7 +309,7 @@ func (msg messageBytes) handleUploadFileUploadComplete() {
 	}{}
 
 	if err := json.Unmarshal(msg, &data); err != nil {
-		log.Println(err)
+		log.Warningln("error unmarshalling struct for handleUploadFileUploadComplete", err)
 		return
 	}
 
@@ -329,12 +327,12 @@ func (msg messageBytes) handleUploadFileUploadComplete() {
 	}.saveMessageContent()
 
 	if err != nil {
-		log.Println(err)
+		log.Warningln("error saving message content on handleUploadFileUploadComplete", err)
 	}
 
 	jsonContent, err := json.Marshal(&data)
 	if err != nil {
-		log.Println(err)
+		log.Warningln("error marshalling json in handleUploadFileUploadComplete", err)
 	}
 
 	for _, roomUser := range roomUsers {
@@ -349,7 +347,7 @@ func (msg messageBytes) handleUploadFileUploadComplete() {
 func (msg messageBytes) handleRequestDownload(author string) {
 	file := File{}
 	if err := json.Unmarshal(msg, &file); err != nil {
-		log.Println(err)
+		log.Warningln("error unmarshalling json on handleRequestDownload", err)
 		return
 	}
 
@@ -362,7 +360,7 @@ func (msg messageBytes) handleRequestDownload(author string) {
 
 	jsonContent, err := json.Marshal(&file)
 	if err != nil {
-		log.Println(err)
+		log.Warningln("error marshalling json on handleRequestDownload", err)
 	}
 
 	HubConstruct.sendMessage(jsonContent, author)
@@ -371,14 +369,14 @@ func (msg messageBytes) handleRequestDownload(author string) {
 func (msg messageBytes) handleFileDownload(author string) {
 	file := FileChunks{}
 	if err := json.Unmarshal(msg, &file); err != nil {
-		log.Println(err)
+		log.Warningln("error unmarshalling json on handleFileDownload", err)
 		return
 	}
 
 	fileName := file.FileName
 
 	if err := file.retrieveFileChunk(); err != nil {
-		log.Println("error retrieving file", err)
+		log.Warningln("error retrieving file", err)
 		// Send download file error message to client so as to stop download.
 		file = FileChunks{}
 		file.MsgType = values.DownloadFileErrorMsgType
@@ -390,7 +388,7 @@ func (msg messageBytes) handleFileDownload(author string) {
 
 	jsonContent, err := json.Marshal(&file)
 	if err != nil {
-		log.Println(err)
+		log.Warningln("error marshalling json on handleFileDownload", err)
 	}
 
 	HubConstruct.sendMessage(jsonContent, author)
@@ -408,7 +406,7 @@ func handleSearchUser(searchText, user string) {
 
 	jsonContent, err := json.Marshal(&data)
 	if err != nil {
-		log.Println("Error while converting search user result to json", err)
+		log.Warningln("error while converting search user result to json", err)
 		return
 	}
 
@@ -419,7 +417,7 @@ func handleSearchUser(searchText, user string) {
 func handleRequestAllMessages(roomID, author string) {
 	room := Room{RoomID: roomID}
 	if err := room.getAllMessageInRoom(); err != nil {
-		log.Println("could not get all messages in room, err:", err)
+		log.Warningln("could not get all messages in room, err:", err)
 		return
 	}
 
@@ -441,7 +439,7 @@ func handleRequestAllMessages(roomID, author string) {
 
 	jsonContent, err := json.Marshal(&data)
 	if err != nil {
-		log.Println("could not marshal images, err:", err)
+		log.Warningln("could not marshal images, err:", err)
 		return
 	}
 
@@ -453,7 +451,7 @@ func handleRequestAllMessages(roomID, author string) {
 func handleLoadUserContent(email string) {
 	userInfo := User{Email: email}
 	if err := userInfo.getUser(); err != nil {
-		log.Println("Could not fetch users room", email)
+		log.Warningln("could not fetch users room", email)
 		return
 	}
 
@@ -476,7 +474,7 @@ func broadcastOnlineStatusToAllUserRoom(userEmail string, online bool) {
 	user := User{Email: userEmail}
 	associates, err := user.getAllUsersAssociates()
 	if err != nil {
-		log.Println("could not get users associate", err)
+		log.Warningln("could not get users associate", err)
 		return
 	}
 

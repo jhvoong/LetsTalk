@@ -3,9 +3,7 @@ package model
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
-	"log"
 	"sync"
 	"time"
 
@@ -13,6 +11,7 @@ import (
 	"github.com/metaclips/LetsTalk/values"
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v2"
+	log "github.com/sirupsen/logrus"
 )
 
 func init() {
@@ -49,7 +48,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 	if err := json.Unmarshal(msg, &sdp); err != nil {
 		// Send back a CreateSessionError indicating user already in a session.
 		onSessionError(user, "Unable to retrieve class session details.")
-		log.Println("error while unmarshaling start session sdp", err)
+		log.Errorln("error while unmarshaling start session sdp", err)
 
 		return
 	}
@@ -57,7 +56,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 	// A single user might login using multiple devices. We close recent peerconnection if there's one.
 	s.peerConnectionMutexes.Lock()
 	if s.peerConnection[sdp.UserID] != nil {
-		log.Println(user, "already in a session")
+		log.Errorln(user, "already in a session")
 		onSessionError(user, "You are already in another session.")
 		s.peerConnectionMutexes.Unlock()
 		return
@@ -66,7 +65,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 
 	peerConnection, err := classSessions.api.NewPeerConnection(values.PeerConnectionConfig)
 	if err != nil {
-		log.Println("unable to create a peerconnection", err)
+		log.Warningln("unable to create a peerconnection", err)
 		onSessionError(user, "Unable to create peerconnection")
 		return
 	}
@@ -88,16 +87,17 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 	}
 
 	peerConnection.OnConnectionStateChange(func(cc webrtc.PeerConnectionState) {
-		fmt.Printf("PeerConnection State has changed %s \n", cc.String())
+		log.Infoln("PeerConnection State has changed %s \n", cc.String())
 		if cc == webrtc.PeerConnectionStateFailed {
 			// Since this is the publisher, all video and audio tracks related to the session
 			// should be cleared and all peer connections closed.
-			videoAudioWriter.close()
 
 			go func() {
 				if !values.Config.EnableClassSessionRecord {
 					return
 				}
+
+				videoAudioWriter.close()
 
 				// If token is not provided and file upload is set to true, file is uploaded to DB.
 				if values.Config.DropboxToken == "" {
@@ -107,7 +107,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 
 				link, err := videoAudioWriter.getVideoFileSharableLink()
 				if err != nil {
-					log.Println("unable to generate sharable link", err)
+					log.Errorln("unable to generate sharable link", err)
 					return
 				}
 
@@ -127,12 +127,12 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 
 				roomUsers, err := message.saveMessageContent()
 				if err != nil {
-					log.Println("unable to save class session link to db", err)
+					log.Errorln("unable to save class session link to db", err)
 				}
 
 				content, err := json.Marshal(message)
 				if err != nil {
-					log.Println("unable to marshal json while sending link", err)
+					log.Warningln("unable to marshal json while sending link", err)
 					return
 				}
 
@@ -166,11 +166,11 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 	})
 
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-		fmt.Printf("Connection State has changed %s \n", connectionState.String())
+		log.Infoln("Connection State has changed %s \n", connectionState.String())
 	})
 
 	peerConnection.OnSignalingStateChange(func(cc webrtc.SignalingState) {
-		fmt.Println("Session singaling", cc.String())
+		log.Infoln("Session singaling", cc.String())
 	})
 
 	peerConnection.OnTrack(func(remoteTrack *webrtc.Track, receiver *webrtc.RTPReceiver) {
@@ -178,11 +178,11 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 		// Packets are to be broadcasted to other users on the session.
 		// For video, resolution is in 480px.
 		if remoteTrack.PayloadType() == webrtc.DefaultPayloadTypeVP8 {
-			log.Println("VP8 track is being called")
+			log.Infoln("VP8 track is being called")
 
 			videoTrack, err := peerConnection.NewTrack(remoteTrack.PayloadType(), remoteTrack.SSRC(), sessionID, sdp.UserID)
 			if err != nil {
-				log.Println("unable to generate start session video track", err)
+				log.Warningln("unable to generate start session video track", err)
 				onSessionError(user, "Unable to start video track.")
 
 				// Return back a class session creation error back to client.
@@ -208,13 +208,13 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 			for {
 				rtp, err := remoteTrack.ReadRTP()
 				if err != nil {
-					log.Println("Publisher video track errored, exiting now.", err)
+					log.Warningln("Publisher video track errored, exiting now.", err)
 					break
 				}
 
 				err = videoTrack.WriteRTP(rtp)
 				if err != nil && !errors.Is(err, io.ErrClosedPipe) {
-					log.Println("Publisher video packet writed break", err)
+					log.Warningln("Publisher video packet writed break", err)
 					break
 				}
 
@@ -223,14 +223,14 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 				}
 			}
 
-			log.Println("Publisher video track exited")
+			log.Infoln("Publisher video track exited")
 
 		} else if remoteTrack.PayloadType() == webrtc.DefaultPayloadTypeOpus {
 			log.Println("OPUS track called")
 
 			audioTrack, err := peerConnection.NewTrack(remoteTrack.PayloadType(), remoteTrack.SSRC(), sessionID, sdp.UserID)
 			if err != nil {
-				log.Println("unable to start audio track", err)
+				log.Warningln("unable to start audio track", err)
 				// Return back a class session creation error back to client.
 				// Also, users might decide to disable video/audio on start.
 				onSessionError(user, "Unable to start audio track.")
@@ -245,13 +245,13 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 			for {
 				rtp, err := remoteTrack.ReadRTP()
 				if err != nil {
-					log.Println("Publisher audio track errored, exiting now.", err)
+					log.Errorln("Publisher audio track error, exiting now.", err)
 					break
 				}
 
 				err = audioTrack.WriteRTP(rtp)
 				if err != nil && !errors.Is(err, io.ErrClosedPipe) {
-					log.Println("Publisher video packet writed break", err)
+					log.Errorln("Publisher video packet write break", err)
 					break
 				}
 
@@ -260,17 +260,17 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 				}
 			}
 
-			log.Println("Publisher audio track exited")
+			log.Infoln("Publisher audio track exited")
 
 		} else {
-			log.Println("unsupported track is being played. Video writer might not work", remoteTrack.PayloadType())
+			log.Warningln("unsupported track is being played. Video writer might not work", remoteTrack.PayloadType())
 		}
 	})
 
 	sdp.peerConnection = peerConnection
 	if err = sdp.negotiate(); err != nil {
 		closePeerConnection(peerConnection)
-		log.Println("error while negotiating on start class session", err)
+		log.Warningln("error while negotiating on start class session", err)
 		onSessionError(user, "Unable to negotiate.")
 
 		return
@@ -284,7 +284,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 	if err != nil {
 		closePeerConnection(peerConnection)
 		onSessionError(user, "Unable to send class session to room.")
-
+		log.Warningln("unable to marshal json on start class session", err)
 		return
 	}
 
@@ -300,7 +300,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 	if err != nil {
 		closePeerConnection(peerConnection)
 		onSessionError(user, "Unable to send class session to room.")
-
+		log.Warningln("unable to send class session to room", err)
 		return
 	}
 
@@ -312,7 +312,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) {
 	sdp := sdpConstruct{}
 	if err := json.Unmarshal(msg, &sdp); err != nil {
-		log.Println("unable to marshal json on join session", err)
+		log.Warningln("unable to marshal json on join session", err)
 		onSessionError(user, "Unable to retrieve class session details.")
 
 		return
@@ -321,7 +321,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 	// A single user might login using multiple devices. We close recent peerconnection if there's one.
 	s.peerConnectionMutexes.Lock()
 	if s.peerConnection[sdp.UserID] != nil {
-		log.Println(user, "already in a session")
+		log.Errorln(user, "already in a session")
 		onSessionError(user, "You are already in another session.")
 		s.peerConnectionMutexes.Unlock()
 
@@ -331,7 +331,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 
 	peerConnection, err := classSessions.api.NewPeerConnection(values.PeerConnectionConfig)
 	if err != nil {
-		log.Println("unable to create a peerconnection", err)
+		log.Warningln("unable to create a peerconnection", err)
 		onSessionError(user, "Unable to create peerconnection")
 
 		peerConnection.Close()
@@ -339,7 +339,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 	}
 
 	peerConnection.OnConnectionStateChange(func(cc webrtc.PeerConnectionState) {
-		fmt.Printf("PeerConnection State has changed for joined class %s \n", cc.String())
+		log.Infoln("PeerConnection State has changed for joined class %s \n", cc.String())
 
 		if cc == webrtc.PeerConnectionStateFailed {
 			// Remove user from connected users list.
@@ -381,12 +381,12 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 					for _, rtpSenderDetails := range s.audioTrackSender[audioTrack] {
 						if pc := s.peerConnection[rtpSenderDetails.userID]; pc != nil {
 							if err := pc.RemoveTrack(rtpSenderDetails.sender); err != nil {
-								log.Println("error removing tracks", err)
+								log.Warningln("error removing tracks", err)
 							}
 
 							offerConstruct := sdpConstruct{peerConnection: pc, ClassSessionID: sdp.ClassSessionID, UserID: rtpSenderDetails.userID}
 							if err = offerConstruct.sendRenegotiateOffer(); err != nil {
-								log.Println("failed to send renegotiation offer, closing now", err)
+								log.Warningln("failed to send renegotiation offer, closing now", err)
 							}
 						}
 					}
@@ -403,19 +403,20 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 	})
 
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-		fmt.Printf("Join class session Connection State has changed %s \n", connectionState.String())
+		log.Infoln("Join class session Connection State has changed %s \n", connectionState.String())
 	})
 
 	peerConnection.OnSignalingStateChange(func(cc webrtc.SignalingState) {
-		fmt.Println("Join class session singaling", cc.String())
+		log.Infoln("Join class session singaling", cc.String())
 	})
 
 	peerConnection.OnTrack(func(remoteTrack *webrtc.Track, receiver *webrtc.RTPReceiver) {
-		fmt.Println("OnTrack detect join session to have", remoteTrack.PayloadType())
+		log.Infoln("OnTrack detect join session to have", remoteTrack.PayloadType())
 		audioTrack, err := peerConnection.NewTrack(remoteTrack.PayloadType(), remoteTrack.SSRC(), sdp.ClassSessionID, sdp.UserID)
 		if err != nil {
 			onSessionError(user, "Unable to create an audio track.")
 			peerConnection.Close()
+			log.Warningln("unable to create an audio track in join class session")
 			return
 		}
 
@@ -423,11 +424,12 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 			// Confirm both video and audio track from publisher are both enabled and publisher is still up.
 			s.peerConnectionMutexes.Lock()
 
-			publisherPeerConnection := s.peerConnection[sdp.Author]
-			if publisherPeerConnection == nil {
+			publisherPeerConnection, ok := s.peerConnection[sdp.Author]
+			if publisherPeerConnection == nil && ok {
 				// Send back a JoinSessionError. Class session is closed.
 				closePeerConnection(peerConnection)
 				onSessionError(user, "Class session has ended.")
+				log.Errorln("user is requesting an ended class session")
 
 				s.peerConnectionMutexes.Unlock()
 				return
@@ -439,6 +441,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 			if s.publisherVideoTracks[sdp.ClassSessionID] == nil {
 				onSessionError(user, "Publisher has not started call yet.")
 				closePeerConnection(peerConnection)
+				log.Errorln("user is requesting an ended class session")
 
 				s.publisherTrackMutexes.Unlock()
 				return
@@ -450,6 +453,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 				closePeerConnection(peerConnection)
 
 				onSessionError(user, "Error adding publishers track.")
+				log.Warningln("error adding video track to users on join session", err)
 				s.publisherTrackMutexes.Unlock()
 				return
 			}
@@ -464,7 +468,8 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 				if track != nil {
 					sender, err := peerConnection.AddTrack(track)
 					if err != nil {
-						log.Println("error adding audio track in join session", err)
+						log.Warningln("error adding audio tracks in join session", err)
+						continue
 					}
 
 					senderData := rtpSenderData{
@@ -488,7 +493,8 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 
 					sender, err := pc.AddTrack(audioTrack)
 					if err != nil {
-						log.Println("could not add track to other users", err)
+						log.Errorln("could not add track to other users", err)
+						continue
 					}
 
 					// Save other users sender track.
@@ -500,7 +506,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 					offerConstruct := sdpConstruct{peerConnection: pc, ClassSessionID: sdp.ClassSessionID, UserID: otherConnectedUser}
 					if err = offerConstruct.sendRenegotiateOffer(); err != nil {
 						// If error is nil, there's still a chance to be corrected on the next renegotiation.
-						log.Println("failed to send renegotiation offer, closing now", err)
+						log.Warningln("failed to send renegotiation offer, closing now", err)
 					}
 				}
 			}
@@ -508,7 +514,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 			// Renegotiate with self.
 			offerConstruct := sdpConstruct{peerConnection: peerConnection, ClassSessionID: sdp.ClassSessionID, UserID: sdp.UserID}
 			if err = offerConstruct.sendRenegotiateOffer(); err != nil {
-				log.Println("failed to send renegotiation offer, closing now", err)
+				log.Warningln("failed to send renegotiation offer, closing now", err)
 			}
 
 			s.connectedUsers[sdp.ClassSessionID] = append(s.connectedUsers[sdp.ClassSessionID], sdp.UserID)
@@ -518,31 +524,31 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 			s.connectedUsersMutex.Unlock()
 			s.peerConnectionMutexes.Unlock()
 
-			fmt.Println("Starting audio writing")
+			log.Infoln("Starting audio writing")
 		}()
 
 		rtpBuf := make([]byte, 1400)
 		for {
 			i, err := remoteTrack.Read(rtpBuf)
 			if err != nil {
-				log.Println("error reading remote track at join session", err)
+				log.Errorln("error reading remote track at join session", err)
 				break
 			}
 
 			_, err = audioTrack.Write(rtpBuf[:i])
 			if err != nil && !errors.Is(err, io.ErrClosedPipe) {
-				log.Println("Publisher video packet writed break", err)
+				log.Errorln("Publisher video packet write break", err)
 				break
 			}
 		}
 
-		log.Println("Subscriber audio track exited")
+		log.Infoln("Subscriber audio track exited")
 	})
 
 	sdp.peerConnection = peerConnection
 	if err = sdp.negotiate(); err != nil {
 		onSessionError(user, "Unable to initiate peer negotiation.")
-		log.Println("unable to negotiate on join class session", err)
+		log.Warningln("unable to negotiate on join class session", err)
 	}
 }
 
@@ -614,7 +620,7 @@ func (sdp sdpConstruct) sendRenegotiateOffer() error {
 
 func (sdp sdpConstruct) acceptRenegotiation(msg []byte) {
 	if err := json.Unmarshal(msg, &sdp); err != nil {
-		log.Println("Unable to unmarshal json", err)
+		log.Warningln("unable to unmarshal json", err)
 		return
 	}
 
@@ -622,8 +628,7 @@ func (sdp sdpConstruct) acceptRenegotiation(msg []byte) {
 
 	peerConnection, ok := classSessions.peerConnection[sdp.UserID]
 	if !ok {
-		// return values.ErrPeerConnectionNotFound
-		log.Println("Failed to establish accept renegotiation")
+		log.Errorln("Failed to establish accept renegotiation")
 		return
 	}
 
@@ -636,7 +641,7 @@ func (sdp sdpConstruct) acceptRenegotiation(msg []byte) {
 		})
 
 	if err != nil {
-		log.Println("Failed to set remote description while accepting renegotiation", err)
+		log.Warningln("failed to set remote description while accepting renegotiation", err)
 	}
 }
 
@@ -659,7 +664,7 @@ func onSessionError(user, errString string) {
 
 	content, err := json.Marshal(errContent)
 	if err != nil {
-		log.Println("unable to send session error", err)
+		log.Warningln("unable to send session error", err)
 	}
 
 	HubConstruct.sendMessage(content, user)

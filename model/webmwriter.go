@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/at-wat/ebml-go/webm"
@@ -10,6 +9,7 @@ import (
 	"github.com/pion/rtp"
 	"github.com/pion/rtp/codecs"
 	"github.com/pion/webrtc/v2/pkg/media/samplebuilder"
+	log "github.com/sirupsen/logrus"
 )
 
 // newWebmWriter writes video class session to either be upload to a Dropbox drive
@@ -26,7 +26,7 @@ func newWebmWriter(fileName string) *webmWriter {
 func (s *webmWriter) initWriter(width, height int) {
 	w, err := os.OpenFile(s.fileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		log.Println(err)
+		log.Warningln("error creating video file on initWriter", err)
 	}
 
 	ws, err := webm.NewSimpleBlockWriter(w,
@@ -56,7 +56,7 @@ func (s *webmWriter) initWriter(width, height int) {
 			},
 		})
 	if err != nil {
-		log.Println(err)
+		log.Warningln("error creating simple block writer", err)
 	}
 
 	fmt.Printf("WebM saver has started with video width=%d, height=%d\n", width, height)
@@ -78,7 +78,7 @@ func (s *webmWriter) pushOpus(rtpPacket *rtp.Packet) {
 			s.audioTimestamp += sample.Samples
 			t := s.audioTimestamp / 48
 			if _, err := s.audioWriter.Write(true, int64(t), sample.Data); err != nil {
-				log.Println(err)
+				log.Warningln("error writer to audio on pushOPUS", err)
 			}
 		}
 	}
@@ -112,7 +112,7 @@ func (s *webmWriter) pushVP8(rtpPacket *rtp.Packet) {
 			s.videoTimestamp += sample.Samples
 			t := s.videoTimestamp / 90
 			if _, err := s.videoWriter.Write(videoKeyframe, int64(t), sample.Data); err != nil {
-				log.Println(err)
+				log.Warningln("error writing to video writer on pushVP8", err)
 			}
 		}
 	}
@@ -122,34 +122,34 @@ func (s *webmWriter) close() {
 	fmt.Printf("Finalizing webm...\n")
 	if s.audioWriter != nil {
 		if err := s.audioWriter.Close(); err != nil {
-			log.Println(err)
+			log.Warningln("error closing audio writer", err)
 		}
 	}
 
 	if s.videoWriter != nil {
 		if err := s.videoWriter.Close(); err != nil {
-			log.Println(err)
+			log.Warningln("error closing video writer", err)
 		}
 	}
 
-	log.Println("Video writer closed for session, uploading.", s.fileName)
+	log.Infoln("Video writer closed for session, uploading.", s.fileName)
 }
 
 func (s *webmWriter) getVideoFileSharableLink() (string, error) {
 	if values.Config.DropboxToken != "" {
 		dropBoxUploader, err := newDropboxUploader(s.fileName)
 		if err != nil {
-			log.Println("unable to initialize dropbox uploader", err)
+			log.Warningln("unable to initialize dropbox uploader", err)
 			return "", err
 		}
 
 		link, err := dropBoxUploader.dropboxFileUploader()
 		if err != nil {
-			log.Println("unable to get dropbox sharable link", err)
+			log.Warningln("unable to get dropbox sharable link", err)
 			return "", err
 		}
 
-		log.Println("file uploaded to file server")
+		log.Infoln("file uploaded to file server", s.fileName)
 
 		return link, nil
 	}
@@ -160,14 +160,14 @@ func (s *webmWriter) getVideoFileSharableLink() (string, error) {
 func (s *webmWriter) uploadToDB() {
 	defer func() {
 		if err := os.Remove(s.fileName); err != nil {
-			log.Println("unable to remove file", err)
+			log.Warningln("unable to remove file", err)
 		}
 	}()
 
 	if err := uploadFileGridFS(s.fileName); err != nil {
-		log.Println("error saving file to DB", err)
+		log.Warningln("error saving file to DB", err)
 		return
 	}
 
-	log.Println("File uploaded to DB")
+	log.Infoln("File uploaded to DB")
 }

@@ -2,12 +2,12 @@ package main
 
 import (
 	"encoding/gob"
-	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/metaclips/LetsTalk/controller"
 	"github.com/metaclips/LetsTalk/model"

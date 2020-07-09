@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/metaclips/LetsTalk/values"
+	log "github.com/sirupsen/logrus"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -443,26 +443,26 @@ func (b *FileChunks) retrieveFileChunk() error {
 func uploadFileGridFS(fileName string) error {
 	fileBytes, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		log.Println("unable read file while uploading", err)
+		log.Warningln("unable read file while uploading", err)
 		return err
 	}
 
 	buc, err := gridfs.NewBucket(db)
 	if err != nil {
-		log.Println("unable GridFS bucket", err)
+		log.Warningln("unable GridFS bucket", err)
 		return err
 	}
 
-	up, err := buc.OpenUploadStream("hhh")
+	up, err := buc.OpenUploadStream(fileName)
 	if err != nil {
-		log.Println("unable to open upload stream", err)
+		log.Warningln("unable to open upload stream", err)
 		return err
 	}
 	defer up.Close()
 
 	_, err = up.Write(fileBytes)
 	if err != nil {
-		log.Println("unable to write to bucket stream", err)
+		log.Warningln("unable to write to bucket stream", err)
 		return err
 	}
 

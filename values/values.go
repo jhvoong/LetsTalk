@@ -1,9 +1,8 @@
 package values
 
 import (
-	"log"
-
 	"github.com/pion/webrtc/v2"
+	log "github.com/sirupsen/logrus"
 )
 
 type MessageType int

@@ -50,7 +50,6 @@ func HomePage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 // HomePageLoginGet loads login page for users to login. Cookies are initially validated if user is already logged in.
 func HomePageLoginGet(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	data := validatUser(w, r)
-
 	// On validate user, if users has initially logged in execute homepage template else execute login template.
 	switch data.(type) {
 	case error:
