@@ -74,6 +74,10 @@ Users will login through generated email addresses and a password of the first n
 
 Do check [config](config.json) for supported configurations.
 
+To generate TLS certificate for test using tls.
+
+` openssl req -nodes -x509 -newkey rsa:4096 -keyout key.pem -subj "/C=US/ST=Oregon/L=Portland/O=Company Name/OU=Org/CN=example.com" -out cert.pem -days 365 `
+
 - The default ICE servers in use if none is specified in config is: `stun:stun.l.google.com:19302`
 
 - If no TLS key and cert path is specified, HTTP is used.
