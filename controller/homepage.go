@@ -2,13 +2,13 @@ package controller
 
 import (
 	"html/template"
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/metaclips/LetsTalk/model"
 	"github.com/metaclips/LetsTalk/values"
+	log "github.com/sirupsen/logrus"
 )
 
 var homepageTmpl, loginTmpl *template.Template
@@ -36,12 +36,12 @@ func HomePage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	switch data.(type) {
 	case error:
-		log.Println("could not log user in", data)
+		log.Errorln("could not log user in", data)
 		http.Redirect(w, r, "/login", 302)
 
 	default:
 		if err := homepageTmpl.Execute(w, data); err != nil {
-			log.Println(err)
+			log.Errorln("error executing homepage template on HomePage", err)
 		}
 	}
 
@@ -56,12 +56,12 @@ func HomePageLoginGet(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		data := setLoginDetails(false, false, "", "/login")
 
 		if err := loginTmpl.Execute(w, data); err != nil {
-			log.Println(err)
+			log.Warningln("error executing login template on HompageLoginGet", err)
 		}
 
 	default:
 		if err := homepageTmpl.Execute(w, data); err != nil {
-			log.Println(err)
+			log.Warningln("error executing homepage template on HomepageLoginGet", err)
 		}
 	}
 }
@@ -80,7 +80,7 @@ func HomePageLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 		data := setLoginDetails(true, false, "Username or password invalid.", "/login")
 
 		if err := loginTmpl.Execute(w, data); err != nil {
-			log.Println(err)
+			log.Warningln("error executing login template on HomePageLoginPost", err)
 		}
 		return
 	}

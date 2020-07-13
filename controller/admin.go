@@ -2,7 +2,6 @@ package controller
 
 import (
 	"html/template"
-	"log"
 	"net/http"
 	"strings"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/metaclips/LetsTalk/values"
 
 	"github.com/julienschmidt/httprouter"
+	log "github.com/sirupsen/logrus"
 )
 
 func AdminLoginPOST(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -25,7 +25,7 @@ func AdminLoginPOST(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		data.ErrorDetail = values.ErrInvalidDetails.Error()
 
 		if err := loginTmpl.Execute(w, data); err != nil {
-			log.Println(err)
+			log.Warningln(err)
 		}
 
 		return
@@ -43,7 +43,7 @@ func AdminLoginPOST(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	}
 
 	if err := cookie.CreateCookie(w); err != nil {
-		log.Println(err)
+		log.Warningln("error creating cookies on admin login post", err)
 		data.SigninError = true
 		data.ErrorDetail = "server error"
 		loginTmpl.Execute(w, data)
@@ -62,14 +62,14 @@ func AdminLoginGET(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 
 	data := setLoginDetails(false, true, "", "/admin/login/")
 	if err := loginTmpl.Execute(w, data); err != nil {
-		log.Println(err)
+		log.Warningln("error executing login template", err)
 	}
 }
 
 func AdminPage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	cookie := model.CookieDetail{CookieName: values.AdminCookieName, Collection: values.AdminCollectionName}
 	if err := cookie.CheckCookie(r, w); err != nil {
-		log.Println(err)
+		log.Warningln("error checking admin cookies on AdminPage", err)
 		http.Redirect(w, r, "/admin/login/", 302)
 		return
 	}
@@ -86,11 +86,11 @@ func AdminPage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		"views/admin/components/adduser.vue", "views/admin/components/block.vue", "views/admin/components/messagescan.vue")
 
 	if terr != nil {
-		log.Println("could not load template in AdminPage function", terr)
+		log.Warningln("could not load template in AdminPage function", terr)
 		return
 	}
 	if err := tmpl.Execute(w, data); err != nil {
-		log.Println("could not execute template in AdminPage function", err)
+		log.Warningln("could not execute template in AdminPage function", err)
 	}
 }
 
@@ -130,11 +130,11 @@ func UploadUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	tmpl, terr := template.New("admin.html").Delims("(%", "%)").ParseFiles("views/admin/admin.html", "views/admin/components/tabs.vue",
 		"views/admin/components/adduser.vue", "views/admin/components/block.vue", "views/admin/components/messagescan.vue")
 	if terr != nil {
-		log.Println("could not load template in UploadUser function", terr)
+		log.Warningln("could not load template in UploadUser function", terr)
 		return
 	}
 
 	if err := tmpl.Execute(w, data); err != nil {
-		log.Println("could not execute template in UploadUser function", err)
+		log.Warningln("could not execute template in UploadUser function", err)
 	}
 }

@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/at-wat/ebml-go/webm"
@@ -59,7 +58,7 @@ func (s *webmWriter) initWriter(width, height int) {
 		log.Warningln("error creating simple block writer", err)
 	}
 
-	fmt.Printf("WebM saver has started with video width=%d, height=%d\n", width, height)
+	log.Infoln("WebM saver has started with video width=%d, height=%d\n", width, height)
 	s.audioWriter = ws[0]
 	s.videoWriter = ws[1]
 }
@@ -119,7 +118,7 @@ func (s *webmWriter) pushVP8(rtpPacket *rtp.Packet) {
 }
 
 func (s *webmWriter) close() {
-	fmt.Printf("Finalizing webm...\n")
+	log.Infoln("Finalizing webm...\n")
 	if s.audioWriter != nil {
 		if err := s.audioWriter.Close(); err != nil {
 			log.Warningln("error closing audio writer", err)

@@ -3,11 +3,11 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/metaclips/LetsTalk/values"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -145,9 +145,8 @@ func (s Subscription) ReadPump(user string) {
 
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-				log.Printf("error: %v\n", err)
+				log.Warningln("error: %v\n", err)
 			}
-			log.Println(err)
 
 			break
 		}
@@ -161,7 +160,7 @@ func (s Subscription) ReadPump(user string) {
 
 		err = json.Unmarshal(msg, &data)
 		if err != nil {
-			log.Println("could not unmarshal json")
+			log.Warningln("could not unmarshal json in readPump", err)
 		}
 
 		switch data.MsgType {
@@ -216,7 +215,7 @@ func (s Subscription) ReadPump(user string) {
 			handleLoadUserContent(user)
 
 		default:
-			log.Println("Could not convert required type", data.MsgType)
+			log.Warningln("Could not convert required type", data.MsgType)
 		}
 	}
 }

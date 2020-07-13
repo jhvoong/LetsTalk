@@ -226,7 +226,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 			log.Infoln("Publisher video track exited")
 
 		} else if remoteTrack.PayloadType() == webrtc.DefaultPayloadTypeOpus {
-			log.Println("OPUS track called")
+			log.Infoln("OPUS track called")
 
 			audioTrack, err := peerConnection.NewTrack(remoteTrack.PayloadType(), remoteTrack.SSRC(), sessionID, sdp.UserID)
 			if err != nil {
@@ -479,7 +479,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 					s.audioTrackSender[track] = append(s.audioTrackSender[track], senderData)
 
 				} else {
-					log.Println("failed track here")
+					log.Errorln("failed track here")
 				}
 			}
 
