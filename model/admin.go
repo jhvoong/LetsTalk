@@ -1,7 +1,6 @@
 package model
 
 import (
-	"net/http"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -30,7 +29,7 @@ func (b *Admin) CreateAdmin() error {
 	return err
 }
 
-func (b User) UploadUser(r *http.Request) error {
+func (b User) UploadUser() error {
 	b.Name = strings.Title(b.Name)
 	if names := strings.Split(b.Name, " "); len(names) > 1 {
 		var err error
@@ -43,11 +42,6 @@ func (b User) UploadUser(r *http.Request) error {
 	id := strings.Split(b.Email, "@")
 	if len(id) > 1 {
 		b.ID = id[0]
-	}
-
-	if b.Class == "student" {
-		b.ParentEmail = r.FormValue("parentEmail")
-		b.ParentNumber = r.FormValue("parentNumber")
 	}
 
 	values.MapEmailToName[b.Email] = b.Name

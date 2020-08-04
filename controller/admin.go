@@ -50,13 +50,13 @@ func AdminLoginPOST(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		return
 	}
 
-	http.Redirect(w, r, "/admin/", 302)
+	http.Redirect(w, r, "/admin/", http.StatusMovedPermanently)
 }
 
 func AdminLoginGET(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	cookie := model.CookieDetail{CookieName: values.AdminCookieName, Collection: values.AdminCollectionName}
 	if err := cookie.CheckCookie(r, w); err == nil {
-		http.Redirect(w, r, "/admin/", 302)
+		http.Redirect(w, r, "/admin/", http.StatusMovedPermanently)
 		return
 	}
 
@@ -70,7 +70,7 @@ func AdminPage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	cookie := model.CookieDetail{CookieName: values.AdminCookieName, Collection: values.AdminCollectionName}
 	if err := cookie.CheckCookie(r, w); err != nil {
 		log.Warningln("error checking admin cookies on AdminPage", err)
-		http.Redirect(w, r, "/admin/login/", 302)
+		http.Redirect(w, r, "/admin/login/", http.StatusBadRequest)
 		return
 	}
 
@@ -98,19 +98,21 @@ func UploadUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	cookie := model.CookieDetail{CookieName: values.AdminCookieName, Collection: values.AdminCollectionName}
 	err := cookie.CheckCookie(r, w)
 	if err != nil {
-		http.Redirect(w, r, "/adnin/login", 302)
+		http.Redirect(w, r, "/adnin/login", http.StatusBadRequest)
 		return
 	}
 
 	r.ParseForm()
-	email := r.FormValue("email")
-	name := r.FormValue("name")
-	dateOfBirth := r.FormValue("DOB")
-	usersClass := r.FormValue("usersClass")
-	faculty := r.FormValue("faculty")
-	email = strings.ToLower(email)
 
-	user := model.User{Email: email, Name: name, DOB: dateOfBirth, Class: usersClass, Faculty: faculty}
+	user := model.User{
+		Email:        strings.ToLower(r.FormValue("email")),
+		Name:         r.FormValue("name"),
+		DOB:          r.FormValue("DOB"),
+		Class:        r.FormValue("usersClass"),
+		Faculty:      r.FormValue("faculty"),
+		ParentEmail:  r.FormValue("parentEmail"),
+		ParentNumber: r.FormValue("parentNumber"),
+	}
 
 	data := struct {
 		UploadSuccess bool
@@ -120,9 +122,7 @@ func UploadUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		false,
 	}
 
-	if err := user.UploadUser(r); err != nil {
-		// TODO: we should also show upload error.
-		// Avoid boilerplate code here.
+	if err := user.UploadUser(); err != nil {
 		data.UploadSuccess = false
 		data.Error = true
 	}

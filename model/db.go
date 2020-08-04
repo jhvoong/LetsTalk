@@ -17,7 +17,9 @@ import (
 var db *mongo.Database
 var ctx, cancel = context.WithCancel(context.Background())
 
-func InitDB() {
+func InitModel() {
+	go HubConstruct.Run(ctx)
+
 	dbHost := values.Config.DbHost
 	mongoDB, err := mongo.Connect(ctx, options.Client().ApplyURI(dbHost))
 	if err != nil {

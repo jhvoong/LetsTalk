@@ -20,8 +20,7 @@ func main() {
 	}
 
 	gob.Register(time.Time{})
-	model.InitDB()
-	go model.HubConstruct.Run()
+	model.InitModel()
 
 	router := httprouter.New()
 

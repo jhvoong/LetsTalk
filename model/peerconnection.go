@@ -87,7 +87,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 	}
 
 	peerConnection.OnConnectionStateChange(func(cc webrtc.PeerConnectionState) {
-		log.Infoln("PeerConnection State has changed %s \n", cc.String())
+		log.Infoln("PeerConnection State has changed", cc.String())
 		if cc == webrtc.PeerConnectionStateFailed {
 			// Since this is the publisher, all video and audio tracks related to the session
 			// should be cleared and all peer connections closed.
@@ -166,7 +166,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 	})
 
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-		log.Infoln("Connection State has changed %s \n", connectionState.String())
+		log.Infoln("Connection State has changed", connectionState.String())
 	})
 
 	peerConnection.OnSignalingStateChange(func(cc webrtc.SignalingState) {
@@ -339,7 +339,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 	}
 
 	peerConnection.OnConnectionStateChange(func(cc webrtc.PeerConnectionState) {
-		log.Infoln("PeerConnection State has changed for joined class %s \n", cc.String())
+		log.Infoln("PeerConnection State has changed for joined class", cc.String())
 
 		if cc == webrtc.PeerConnectionStateFailed {
 			// Remove user from connected users list.
@@ -403,7 +403,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 	})
 
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-		log.Infoln("Join class session Connection State has changed %s \n", connectionState.String())
+		log.Infoln("Join class session Connection State has changed", connectionState.String())
 	})
 
 	peerConnection.OnSignalingStateChange(func(cc webrtc.SignalingState) {

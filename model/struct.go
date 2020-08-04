@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"os"
 	"sync"
 	"time"
@@ -34,7 +35,6 @@ type User struct {
 	DOB   string `bson:"age" json:"age"`
 	Class string `bson:"class" json:"class"`
 	// ID should either be users matric or leading email stripping @....
-	ID           string        `bson:"userID" json:"userID"`
 	ParentEmail  string        `bson:"parentEmail" json:"parentEmail"`
 	ParentNumber string        `bson:"parentNumber" json:"parentNumber"`
 	Password     []byte        `bson:"password" json:"password"`
@@ -74,7 +74,6 @@ type Message struct {
 	Message     string `bson:"message" json:"message,omitempty"`
 	FileSize    string `bson:"fileSize,omitempty" json:"fileSize,omitempty"`
 	FileHash    string `bson:"fileHash,omitempty" json:"fileHash,omitempty"`
-	UserID      string `bson:"userID" json:"userID,omitempty"`
 	Name        string `bson:"name" json:"name,omitempty"`
 	Index       int    `bson:"index" json:"index,omitempty"`
 	Time        string `bson:"time" json:"time,omitempty"`
@@ -101,7 +100,7 @@ type File struct {
 	MsgType        string `bson:"-" json:"msgType,omitempty"`
 	UniqueFileHash string `bson:"_id" json:"fileHash"`
 	FileName       string `bson:"fileName" json:"fileName"`
-	User           string `bson:"userID" json:"userID"`
+	User           string `bson:"email" json:"email"`
 	FileSize       string `bson:"fileSize" json:"fileSize"`
 	FileType       string `bson:"fileType" json:"fileType"`
 	Chunks         int    `bson:"chunks,omitempty" json:"chunks"`
@@ -136,6 +135,7 @@ type Subscription struct {
 // Hub maintains the set of active connections and broadcasts messages to the
 // connections.
 type Hub struct {
+	ctx context.Context
 	// Registered connections.
 	Users map[string]map[*Connection]bool
 
@@ -147,6 +147,13 @@ type Hub struct {
 
 	// Unregister requests from connections.
 	UnRegister chan Subscription
+}
+
+type WSMessageConstruct struct {
+	Email      string `json:"email"`
+	MsgType    string `json:"msgType"`
+	RoomID     string `json:"roomID"`
+	SearchText string `json:"searchText"` // Name of user to be searched.
 }
 
 // classSessionPeerConnections allows class session video calls where a publisher
@@ -194,7 +201,7 @@ type sdpConstruct struct {
 	ClassSessionID string `json:"sessionID"`
 	Author         string `json:"author"`
 	AuthorName     string `json:"name"`
-	UserID         string `json:"userID"`
+	UserID         string `json:"email"`
 	RoomID         string `json:"roomID"`
 	SDP            string `json:"sdp"`
 

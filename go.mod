@@ -17,6 +17,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.6.1
 	go.mongodb.org/mongo-driver v1.3.3
+	go.uber.org/goleak v1.0.0
 	golang.org/x/crypto v0.0.0-20200602180216-279210d13fed
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -33,9 +34,12 @@ var HubConstruct = Hub{
 	Users:      make(map[string]map[*Connection]bool),
 }
 
-func (h *Hub) Run() {
+func (h *Hub) Run(ctx context.Context) {
 	for {
 		select {
+		case <-ctx.Done():
+			return
+
 		case s := <-h.Register:
 			connections := h.Users[s.User]
 			if connections == nil {
@@ -145,22 +149,24 @@ func (s Subscription) ReadPump(user string) {
 
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-				log.Warningln("error: %v\n", err)
+				log.Warningf("error: %v\n", err)
 			}
 
 			break
 		}
 
 		// TODO: Always enquire for userID.
-		data := struct {
-			MsgType    string `json:"msgType"`
-			RoomID     string `json:"roomID"`
-			SearchText string `json:"searchText"`
-		}{}
+		data := WSMessageConstruct{}
 
 		err = json.Unmarshal(msg, &data)
 		if err != nil {
-			log.Warningln("could not unmarshal json in readPump", err)
+			log.Errorf("could not unmarshal json in readPump for user %s err: %s", user, err)
+			continue
+		}
+
+		if data.UserID != user {
+			log.Warningf("an invalid %s user is try to access %s.", data.UserID, user)
+			continue
 		}
 
 		switch data.MsgType {

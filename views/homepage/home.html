@@ -419,7 +419,7 @@
                                 "fileSize": fileSize,
                                 "fileType": fileType,
                                 "msgType": "NewFileUpload",
-                                "userID": '(%.Email%)',
+                                "email": vueComponent.email,
                             }
 
                             socket.send(JSON.stringify(message))
@@ -441,10 +441,11 @@
                     }
 
                     var message = {
+                        "email": vueComponent.email,
                         "msgType": "NewMessage",
                         "roomID": this.currentviewedroomid,
                         "message": this.messageContent,
-                        "userID": '(%.Email%)', "name": '(%.Name%)',
+                        "name": '(%.Name%)',
                         "type": "txt",
                     }
 
@@ -454,9 +455,9 @@
 
                 exitRoom: function () {
                     var message = {
+                        "email": vueComponent.email,
                         "msgType": "ExitRoom",
                         "roomID": this.currentviewedroomid,
-                        "email": '(%.Email %)',
                     }
 
                     socket.send(JSON.stringify(message))
@@ -465,6 +466,7 @@
 
                 getUsers: function () {
                     var message = {
+                        "email": vueComponent.email,
                         "msgType": "SearchUser",
                         "searchText": this.searchText,
                     }
@@ -485,6 +487,7 @@
                     }
 
                     var message = {
+                        "email": vueComponent.email,
                         "msgType": 'RequestUsersToJoinRoom',
                         "users": this.addedUsers,
                         "roomID": this.currentviewedroomid,
@@ -521,7 +524,7 @@
                     // If recentChunkHash is an empty string it indicates a new download, else next file chunk
                     // is requested.
                     var message = {
-                        "userID": vueComponent.userID,
+                        "email": vueComponent.email,
                         "msgType": "RequestDownload",
                         "fileName": id,
                         "fileHash": vueComponent.downloadInfo[id].fileHash,
@@ -551,7 +554,7 @@
                         "fileSize": vueComponent.downloadInfo[id].fileSize,
                         "fileType": vueComponent.downloadInfo[id].fileType,
                         "msgType": "NewFileUpload",
-                        "userID": '(%.Email%)',
+                        "email": this.email,
                     }
 
                     socket.send(JSON.stringify(message))
@@ -649,9 +652,11 @@
                     this.removeWelcomePage = true
                     this.currentChatContentsNotLoaded = true
                     var message = {
+                        "email": this.email,
                         'msgType': 'RequestAllMessages',
                         "roomID": roomID
                     }
+
                     socket.send(JSON.stringify(message))
                     this.currentViewedRoomID = roomID
                 },
@@ -662,7 +667,7 @@
 
                 createRoom: function (roomName) {
                     var jsonContent = {
-                        "email": this.userID,
+                        "email": this.email,
                         "msgType": "NewRoomCreated",
                         "roomName": roomName
                     };
@@ -675,11 +680,11 @@
 
                 acceptJoinRequest: function (roomID, roomName, notificationIndex) {
                     var message = {
+                        "email": this.email,
                         "joined": true,
                         "roomID": roomID,
                         "roomName": roomName,
                         "msgType": "UserJoinedRoom",
-                        "email": '(%.Email %)',
                     }
 
                     socket.send(JSON.stringify(message))
@@ -842,6 +847,7 @@
                                 peerConnection.setLocalDescription(sdp)
                                     .then(function () {
                                         var message = {
+                                            "email": vueComponent.email,
                                             "msgType": "RenegotiateSDP",
                                             "sdp": sdp.sdp,
                                             "userID": vueComponent.userID,
@@ -907,10 +913,10 @@
             peerConnection.onicecandidate = event => {
                 if (event.candidate === null && peerConnection.iceConnectionState === "new") {
                     var message = {
+                        "email": vueComponent.email,
                         "msgType": "StartClassSession",
                         "sdp": peerConnection.localDescription.sdp,
                         "roomID": vueComponent.currentViewedRoomID,
-                        "userID": vueComponent.userID,
                         "authorName": vueComponent.callerNames,
                     }
 
@@ -1007,6 +1013,7 @@
                     console.log("Calling join class session")
 
                     var message = {
+                        "email": vueComponent.email,
                         "msgType": "JoinClassSession",
                         "sdp": peerConnection.localDescription.sdp,
                         "roomID": vueComponent.currentViewedRoomID,
@@ -1161,16 +1168,22 @@
 
             socket.onopen = function () {
                 console.log("websocket open")
-                var msg = JSON.stringify({ msgType: "WebsocketOpen" })
-                socket.send(msg)
+
 
                 if (vueComponent.currentViewedRoomID !== "") {
                     var message = {
+                        "email": vueComponent.email,
                         'msgType': 'RequestAllMessages',
                         "roomID": vueComponent.currentViewedRoomID,
                     }
 
                     socket.send(JSON.stringify(message))
+                } else {
+                    var msg = JSON.stringify({
+                        "email": vueComponent.email,
+                        "msgType": "WebsocketOpen"
+                    })
+                    socket.send(msg)
                 }
             };
 
@@ -1372,7 +1385,7 @@
             }
 
             var message = {
-                "userID": vueComponent.userID,
+                "email": vueComponent.email,
                 "msgType": "DownloadFileChunk",
                 "fileName": id,
                 "compressedFileHash": vueComponent.downloadInfo[id].fileHash,
@@ -1432,7 +1445,7 @@
             vueComponent.downloadInfo[id].chunk++
 
             var message = {
-                "userID": vueComponent.userID,
+                "email": vueComponent.email,
                 "msgType": "DownloadFileChunk",
                 "fileName": id,
                 "compressedFileHash": vueComponent.downloadInfo[id].fileHash,
@@ -1469,7 +1482,7 @@
                 // users in room.
                 var message = {
                     "msgType": "FileUploadSuccess",
-                    "userID": '(%.Email%)',
+                    "email": vueComponent.email,
                     "name": '(%.Name%)',
                     "fileName": id,
                     "roomID": vueComponent.downloadInfo[id].roomID,
@@ -1497,8 +1510,8 @@
                 var fileUniqueHash = CryptoJS.SHA256(data).toString();
 
                 var message = {
+                    "email": vueComponent.email,
                     "msgType": "UploadFileChunk",
-                    "userID": '(%.Email%)',
                     "file": data,
                     "fileName": id,
                     "compressedFileHash": vueComponent.downloadInfo[id].fileHash,

@@ -117,11 +117,6 @@ func (msg messageBytes) handleNewMessage(author string) {
 		return
 	}
 
-	// Do not send if registered WS user is not same as message sender.
-	if author != newMessage.UserID {
-		return
-	}
-
 	newMessage.Time = time.Now().Format(values.TimeLayout)
 	// Save message to database ensuring user is registered to room.
 	registeredUsers, err := newMessage.saveMessageContent()
