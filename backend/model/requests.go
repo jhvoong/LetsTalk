@@ -8,8 +8,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/metaclips/LetsTalk/values"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/metaclips/LetsTalk/backend/values"
 )
 
 type messageBytes []byte

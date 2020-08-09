@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/metaclips/LetsTalk/model"
-	"github.com/metaclips/LetsTalk/values"
+	"github.com/metaclips/LetsTalk/backend/model"
+	"github.com/metaclips/LetsTalk/backend/values"
 
 	"github.com/julienschmidt/httprouter"
 )

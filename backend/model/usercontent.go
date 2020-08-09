@@ -9,13 +9,13 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/metaclips/LetsTalk/values"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/metaclips/LetsTalk/backend/values"
 )
 
 func (b *User) getUser() error {

@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/metaclips/LetsTalk/values"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/metaclips/LetsTalk/backend/values"
 )
 
 func TestDatabase(t *testing.T) {

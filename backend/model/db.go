@@ -5,13 +5,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/metaclips/LetsTalk/values"
-	"golang.org/x/crypto/bcrypt"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"golang.org/x/crypto/bcrypt"
+
+	"github.com/metaclips/LetsTalk/backend/values"
 )
 
 var db *mongo.Database

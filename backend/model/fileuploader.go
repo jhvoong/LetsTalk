@@ -9,7 +9,8 @@ import (
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox/files"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox/sharing"
-	"github.com/metaclips/LetsTalk/values"
+
+	"github.com/metaclips/LetsTalk/backend/values"
 )
 
 // maxDropboxUpload is 2MiB

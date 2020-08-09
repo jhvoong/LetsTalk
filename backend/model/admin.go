@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/metaclips/LetsTalk/values"
+	"github.com/metaclips/LetsTalk/backend/values"
 )
 
 func (b *Admin) CheckAdminDetails(password string) error {

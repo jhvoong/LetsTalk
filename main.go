@@ -9,9 +9,9 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	"github.com/metaclips/LetsTalk/controller"
-	"github.com/metaclips/LetsTalk/model"
-	"github.com/metaclips/LetsTalk/values"
+	"github.com/metaclips/LetsTalk/backend/controller"
+	"github.com/metaclips/LetsTalk/backend/model"
+	"github.com/metaclips/LetsTalk/backend/values"
 )
 
 func main() {

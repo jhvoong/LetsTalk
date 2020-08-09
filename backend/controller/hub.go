@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/metaclips/LetsTalk/model"
-	"github.com/metaclips/LetsTalk/values"
+
+	"github.com/metaclips/LetsTalk/backend/model"
+	"github.com/metaclips/LetsTalk/backend/values"
 )
 
 // ServeWs handles websocket requests from the peer, ensuring user is registered.
