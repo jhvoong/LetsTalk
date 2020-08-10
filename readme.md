@@ -1,5 +1,7 @@
 # Lets Talk
 
+This is a work in progress splitting frontend code from backend.
+
 A chatting application using Pion webRTC and gorilla websocket for text, video, voice and file transfer. [Test server](https://unilag-letstalk.herokuapp.com)
 
 
