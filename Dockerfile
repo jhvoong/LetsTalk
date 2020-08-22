@@ -1,7 +1,6 @@
 FROM golang:latest
 WORKDIR /app
 
-COPY frontend frontend
 COPY backend backend
 
 COPY go.mod go.sum main.go ./
