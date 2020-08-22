@@ -18,11 +18,11 @@
           <v-col cols="12" sm="6">
             <v-text-field
               v-model="email"
+              outlined
+              filled
               type="text"
               :rules="emailRules"
               name="email"
-              rounded
-              filled
               required
               placeholder="Email Address"
             ></v-text-field>
@@ -30,7 +30,7 @@
             <v-text-field
               type="password"
               v-model="password"
-              rounded
+              outlined
               filled
               required
               name="password"
