@@ -1,7 +1,7 @@
 <template>
   <v-container fill-height>
     <div align="center">
-      <v-form>
+      <v-form v-model="detailsValid">
         <v-row justify="center" align="center">
           <v-col cols="12">
             <v-img src="../assets/unilag.svg" contain height="300" width="300"></v-img>
@@ -22,9 +22,11 @@
               filled
               type="text"
               :rules="emailRules"
+              @input="isEmailInvalid"
               name="email"
               required
               placeholder="Email Address"
+              :disabled="detailsDisabled"
             ></v-text-field>
 
             <v-text-field
@@ -33,14 +35,22 @@
               outlined
               filled
               required
+              :rules="passwordRules"
+              @input="isPasswordInvalid"
               name="password"
               placeholder="Password"
+              :disabled="detailsDisabled"
             ></v-text-field>
 
             <v-alert v-if="signinErrorDetails" dense text type="error">{{signinErrorDetails}}</v-alert>
           </v-col>
           <v-col cols="12">
-            <v-btn tile>Log in</v-btn>
+            <v-btn
+              type="Submit"
+              @click="loginUser()"
+              :disabled="detailsDisabled || !detailsValid"
+              tile
+            >Log in</v-btn>
           </v-col>
         </v-row>
       </v-form>
@@ -50,6 +60,7 @@
 
 <script lang="ts">
 import Vue from "vue";
+import Axios from "axios";
 
 export default Vue.extend({
   name: "LoginPage",
@@ -59,6 +70,9 @@ export default Vue.extend({
   },
 
   data: () => ({
+    detailsValid: false,
+    detailsDisabled: false,
+
     signinErrorDetails: "",
     email: "",
     password: "",
@@ -67,9 +81,41 @@ export default Vue.extend({
       (v: string) => !!v || "E-mail is required",
       (v: string) => /.+@.+\..+/.test(v) || "E-mail must be valid",
     ],
+    passwordRules: [(v: string) => !!v || "Password is required"],
   }),
 
-  methods: {},
+  methods: {
+    loginUser: function () {
+      this.detailsDisabled = true;
+
+      let URLs: [string, string];
+      if (this.isAdmin) {
+        URLs = ["/admin/login", "/admin"];
+      } else {
+        URLs = ["/login", "/"];
+      }
+
+      Axios.post(
+        URLs[0],
+        JSON.stringify({
+          username: this.email,
+          password: this.password,
+        }),
+        { withCredentials: true }
+      )
+        .then((Response) => {
+          console.log(Response);
+          if (Response.status == 200) {
+            this.$router.push(URLs[1]);
+          }
+        })
+        .catch((Error) => {
+          console.log(Error);
+          this.detailsDisabled = false;
+          this.signinErrorDetails = Error.message;
+        });
+    },
+  },
 });
 </script>
 
