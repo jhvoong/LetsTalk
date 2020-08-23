@@ -13,7 +13,9 @@ import (
 
 var cookieHandler = securecookie.New(securecookie.GenerateRandomKey(64), securecookie.GenerateRandomKey(32))
 
-func (b CookieDetail) CreateCookie(w http.ResponseWriter) error {
+// GenerateCookie generates a token and sends to frontend.
+// Generated tokens are to be stored by frontend and verified for every request.
+func (b CookieDetail) GenerateCookie(w http.ResponseWriter) (string, error) {
 	exitTime := time.Now().Add(time.Hour * 2).Local()
 	b.Data.ExitTime = exitTime
 	b.Data.UUID = uuid.New().String()
@@ -21,25 +23,15 @@ func (b CookieDetail) CreateCookie(w http.ResponseWriter) error {
 	_, err := db.Collection(b.Collection).UpdateOne(ctx, bson.M{"_id": b.Email},
 		bson.M{"$set": bson.M{"loginUUID": b.Data.UUID, "expires": exitTime}})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	encoded, err := cookieHandler.Encode(b.CookieName, b.Data)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	cookie := &http.Cookie{
-		Name:     b.CookieName,
-		Value:    encoded,
-		Expires:  exitTime,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   true, // Cookie is set to secure that is https so non-https would be dropped.
-		Path:     b.Path,
-	}
-
-	http.SetCookie(w, cookie)
-	return nil
+	return encoded, nil
 }
 
 func (b *CookieDetail) CheckCookie(r *http.Request, w http.ResponseWriter) error {

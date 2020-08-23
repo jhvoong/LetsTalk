@@ -14,6 +14,7 @@ import (
 
 func AdminLoginPOST(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	r.ParseForm()
+
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
@@ -31,26 +32,14 @@ func AdminLoginPOST(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		return
 	}
 
-	cookie := model.CookieDetail{
-		Email:      admin.StaffDetails.Email,
-		Collection: values.AdminCollectionName,
-		CookieName: values.AdminCookieName,
-		Path:       "/admin",
-		Data: model.CookieData{
-			Super: admin.Super,
-			Email: admin.StaffDetails.Email,
-		},
-	}
+	token, err := admin.CreateAdminLogin(w)
 
-	if err := cookie.CreateCookie(w); err != nil {
-		log.Println(err)
-		data.SigninError = true
-		data.ErrorDetail = "server error"
-		loginTmpl.Execute(w, data)
+	if err != nil {
+		http.Error(w, "Invalid login credentials", http.StatusUnauthorized)
 		return
 	}
 
-	http.Redirect(w, r, "/admin/", 302)
+	sendResponse(w, token)
 }
 
 func AdminLoginGET(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -82,8 +71,8 @@ func AdminPage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		false,
 	}
 
-	tmpl, terr := template.New("admin.html").Delims("(%", "%)").ParseFiles("views/admin/admin.html", "views/admin/components/tabs.vue",
-		"views/admin/components/adduser.vue", "views/admin/components/block.vue", "views/admin/components/messagescan.vue")
+	tmpl, terr := template.New("admin.html").Delims("(%", "%)").ParseFiles("backend/views/admin/admin.html", "backend/views/admin/components/tabs.vue",
+		"backend/views/admin/components/adduser.vue", "backend/views/admin/components/block.vue", "backend/views/admin/components/messagescan.vue")
 
 	if terr != nil {
 		log.Println("could not load template in AdminPage function", terr)
@@ -127,8 +116,8 @@ func UploadUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		data.Error = true
 	}
 
-	tmpl, terr := template.New("admin.html").Delims("(%", "%)").ParseFiles("views/admin/admin.html", "views/admin/components/tabs.vue",
-		"views/admin/components/adduser.vue", "views/admin/components/block.vue", "views/admin/components/messagescan.vue")
+	tmpl, terr := template.New("admin.html").Delims("(%", "%)").ParseFiles("backend/views/admin/admin.html", "backend/views/admin/components/tabs.vue",
+		"backend/views/admin/components/adduser.vue", "backend/views/admin/components/block.vue", "backend/views/admin/components/messagescan.vue")
 	if terr != nil {
 		log.Println("could not load template in UploadUser function", terr)
 		return

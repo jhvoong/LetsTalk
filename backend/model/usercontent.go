@@ -179,16 +179,16 @@ func (b User) exitRoom(roomID string) ([]string, error) {
 	return room.RegisteredUsers, err
 }
 
-func (b User) CreateUserLogin(password string, w http.ResponseWriter) error {
+func (b User) CreateUserLogin(password string, w http.ResponseWriter) (string, error) {
 	if err := b.getUser(); err != nil {
-		return err
+		return "", err
 	}
 
 	if err := bcrypt.CompareHashAndPassword(b.Password, []byte(password)); err != nil {
-		return err
+		return "", err
 	}
 
-	err := CookieDetail{
+	token, err := CookieDetail{
 		Email:      b.Email,
 		Collection: values.UsersCollectionName,
 		CookieName: values.UserCookieName,
@@ -196,9 +196,9 @@ func (b User) CreateUserLogin(password string, w http.ResponseWriter) error {
 		Data: CookieData{
 			Email: b.Email,
 		},
-	}.CreateCookie(w)
+	}.GenerateCookie(w)
 
-	return err
+	return token, err
 }
 
 func (b User) validateUser(uniqueID string) error {

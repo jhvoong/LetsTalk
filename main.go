@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/rs/cors"
 
 	"github.com/metaclips/LetsTalk/backend/controller"
 	"github.com/metaclips/LetsTalk/backend/model"
@@ -46,9 +47,17 @@ func main() {
 	router.ServeFiles("/assets/*filepath", http.Dir("./views/assets"))
 	log.Println("Webserver UP")
 
+	// handler := cors.Default().Handler(router)
+	handler := cors.New(cors.Options{
+		Debug:            true,
+		AllowCredentials: true,
+		// ToDo: specify this in config.json file
+		AllowedOrigins: []string{"https://127.0.0.1:8081", "https://192.168.43.140:8081"},
+	}).Handler(router)
+
 	// Optional use of TLS due to Heroku serving TLS at low level.
 	if values.Config.TLS.CertPath != "" && values.Config.TLS.KeyPath != "" {
-		if err := http.ListenAndServeTLS(":"+port, values.Config.TLS.CertPath, values.Config.TLS.KeyPath, router); err != nil {
+		if err := http.ListenAndServeTLS(":"+port, values.Config.TLS.CertPath, values.Config.TLS.KeyPath, handler); err != nil {
 			log.Fatalln(err)
 		}
 
@@ -56,7 +65,7 @@ func main() {
 	}
 
 	// Note: without HTTPS users wont be able to login as SetCookie uses Secure flag.
-	if err := http.ListenAndServe(":"+port, router); err != nil {
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatalln(err)
 	}
 }

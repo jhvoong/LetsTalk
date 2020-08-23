@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"encoding/json"
 	"html/template"
-	"log"
 	"net/http"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/julienschmidt/httprouter"
 
@@ -18,14 +20,14 @@ func init() {
 	var terr error
 	// Use (%%) instead of {{}} for templates.
 	homepageTmpl, terr = template.New("home.html").Delims("(%", "%)").ParseFiles(
-		"views/homepage/home.html",
-		"views/homepage/components/SideBar.vue", "views/homepage/components/ChattingComponent.vue", "views/homepage/components/CallUI.vue")
+		"backend/views/homepage/home.html",
+		"backend/views/homepage/components/SideBar.vue", "backend/views/homepage/components/ChattingComponent.vue", "backend/views/homepage/components/CallUI.vue")
 
 	if terr != nil {
 		log.Fatalln("error parsing homepage templates", terr)
 	}
 
-	loginTmpl, terr = template.New("login.html").Delims("(%", "%)").ParseFiles("views/loginpage/login.html")
+	loginTmpl, terr = template.New("login.html").Delims("(%", "%)").ParseFiles("backend/views/loginpage/login.html")
 	if terr != nil {
 		log.Fatalln("error parsing login templates", terr)
 	}
@@ -69,25 +71,24 @@ func HomePageLoginGet(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 }
 
 func HomePageLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	r.ParseForm()
-	email := r.FormValue("email")
-	email = strings.ToLower(email)
+	if err := r.ParseForm(); err != nil {
+		log.Println(err)
+	}
+
+	email := strings.ToLower(r.FormValue("username"))
 	password := r.FormValue("password")
 
-	err := model.User{
+	token, err := model.User{
 		Email: email,
 	}.CreateUserLogin(password, w)
 
 	if err != nil {
-		data := setLoginDetails(true, false, "Username or password invalid.", "/login")
-
-		if err := loginTmpl.Execute(w, data); err != nil {
-			log.Println(err)
-		}
+		http.Error(w, "Invalid login credentials", http.StatusUnauthorized)
 		return
 	}
 
-	http.Redirect(w, r, "/", 302)
+	w.WriteHeader(http.StatusOK)
+	sendResponse(w, token)
 }
 
 func validatUser(w http.ResponseWriter, r *http.Request) interface{} {
@@ -119,5 +120,12 @@ func setLoginDetails(errors, isAdmin bool, errorDetail, link string) struct {
 		isAdmin,
 		link,
 		errorDetail,
+	}
+}
+
+func sendResponse(w http.ResponseWriter, data interface{}) {
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		log.Errorf("error sending response, err: %s \n", err.Error())
 	}
 }

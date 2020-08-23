@@ -25,6 +25,22 @@ func (b *Admin) CheckAdminDetails(password string) error {
 	return nil
 }
 
+func (b *Admin) CreateAdminLogin(w http.ResponseWriter) (string, error) {
+	cookie := CookieDetail{
+		Email:      b.StaffDetails.Email,
+		Collection: values.AdminCollectionName,
+		CookieName: values.AdminCookieName,
+		Path:       "/admin",
+
+		Data: CookieData{
+			Super: b.Super,
+			Email: b.StaffDetails.Email,
+		},
+	}
+
+	return cookie.GenerateCookie(w)
+}
+
 func (b *Admin) CreateAdmin() error {
 	_, err := db.Collection(values.AdminCollectionName).InsertOne(ctx, b)
 	return err

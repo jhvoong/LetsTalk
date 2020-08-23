@@ -29,10 +29,11 @@ type CookieData struct {
 }
 
 type User struct {
-	Email string `bson:"_id" json:"email"`
-	Name  string `bson:"name" json:"name"`
-	DOB   string `bson:"age" json:"age"`
-	Class string `bson:"class" json:"class"`
+	IsAdmin bool   `bson:"isAdmin"`
+	Email   string `bson:"_id" json:"email"`
+	Name    string `bson:"name" json:"name"`
+	DOB     string `bson:"age" json:"age"`
+	Class   string `bson:"class" json:"class"`
 	// ID should either be users matric or leading email stripping @....
 	ID           string        `bson:"userID" json:"userID"`
 	ParentEmail  string        `bson:"parentEmail" json:"parentEmail"`
