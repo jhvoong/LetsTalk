@@ -55,6 +55,8 @@
 <script lang="ts">
 import Vue from "vue";
 import Axios from "axios";
+import router from "@/router";
+import store from "@/store";
 
 export default Vue.extend({
   name: "Login",
@@ -80,6 +82,7 @@ export default Vue.extend({
 
   methods: {
     loginUser: function () {
+      console.log(this.$store.state.token);
       this.detailsDisabled = true;
 
       let URLs: [string, string];
@@ -108,6 +111,7 @@ export default Vue.extend({
         .then((Response) => {
           console.log(Response.data);
           if (Response.status == 200) {
+            this.$store.commit("setToken", Response.data);
             this.$router.push("/");
           }
         })
