@@ -109,7 +109,7 @@ func UploadUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		false,
 	}
 
-	if err := user.UploadUser(r); err != nil {
+	if err := user.CreateUser(r); err != nil {
 		// TODO: we should also show upload error.
 		// Avoid boilerplate code here.
 		data.UploadSuccess = false

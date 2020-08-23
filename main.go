@@ -33,6 +33,7 @@ func main() {
 	router.GET("/admin", controller.AdminPage)
 
 	router.POST("/login", controller.HomePageLoginPost)
+	router.POST("/register", controller.RegisterUserPost)
 	router.POST("/admin/login", controller.AdminLoginPOST)
 	router.POST("/admin/upload", controller.UploadUser)
 

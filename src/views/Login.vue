@@ -45,6 +45,14 @@
           <v-alert v-if="signinErrorDetails" dense text type="error">{{signinErrorDetails}}</v-alert>
         </v-col>
         <v-col cols="12">
+          <v-btn
+            @click="$router.push('/register')"
+            :disabled="detailsDisabled || !detailsValid"
+            color="green"
+            class="mr-4"
+            tile
+            dark
+          >Register</v-btn>
           <v-btn @click="loginUser()" :disabled="detailsDisabled || !detailsValid" tile>Log in</v-btn>
         </v-col>
       </v-row>
@@ -109,14 +117,12 @@ export default Vue.extend({
         withCredentials: true,
       })
         .then((Response) => {
-          console.log(Response.data);
           if (Response.status == 200) {
             this.$store.commit("setToken", Response.data);
             this.$router.push("/");
           }
         })
         .catch((Error) => {
-          console.log(Error);
           this.detailsDisabled = false;
 
           if (Error.response) {

@@ -5,6 +5,9 @@ node_modules
 # ssl cert
 *.pem
 
+# debug
+*debug_bin*
+
 
 # local env files
 .env.local

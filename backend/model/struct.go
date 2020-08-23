@@ -35,14 +35,14 @@ type User struct {
 	DOB     string `bson:"age" json:"age"`
 	Class   string `bson:"class" json:"class"`
 	// ID should either be users matric or leading email stripping @....
-	ID           string        `bson:"userID" json:"userID"`
-	ParentEmail  string        `bson:"parentEmail" json:"parentEmail"`
-	ParentNumber string        `bson:"parentNumber" json:"parentNumber"`
-	Password     []byte        `bson:"password" json:"password"`
-	Faculty      string        `bson:"faculty" json:"faculty"`
-	UUID         string        `bson:"loginUUID" json:"uuid"`
-	RoomsJoined  []RoomsJoined `bson:"roomsJoined" json:"roomsJoined"`
-	JoinRequest  []JoinRequest `bson:"joinRequest" json:"joinRequest"`
+	ParentEmail      string        `bson:"parentEmail" json:"parentEmail"`
+	ParentNumber     string        `bson:"parentNumber" json:"parentNumber"`
+	Password         []byte        `bson:"password" json:"-"`
+	PasswordInString string        `bson:"-" json:"password"`
+	Faculty          string        `bson:"faculty" json:"faculty"`
+	UUID             string        `bson:"loginUUID" json:"uuid"`
+	RoomsJoined      []RoomsJoined `bson:"roomsJoined" json:"roomsJoined"`
+	JoinRequest      []JoinRequest `bson:"joinRequest" json:"joinRequest"`
 }
 
 type RoomsJoined struct {

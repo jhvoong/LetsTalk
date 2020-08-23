@@ -72,7 +72,8 @@ func HomePageLoginGet(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 
 func HomePageLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	if err := r.ParseForm(); err != nil {
-		log.Println(err)
+		log.Errorln("error parsing form in homepage login post request, err: ", err)
+		return
 	}
 
 	email := strings.ToLower(r.FormValue("username"))

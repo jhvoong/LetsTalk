@@ -46,27 +46,20 @@ func (b *Admin) CreateAdmin() error {
 	return err
 }
 
-func (b User) UploadUser(r *http.Request) error {
+func (b User) CreateUser(r *http.Request) error {
 	b.Name = strings.Title(b.Name)
-	if names := strings.Split(b.Name, " "); len(names) > 1 {
-		var err error
-		b.Password, err = bcrypt.GenerateFromPassword([]byte(names[0]), values.DefaultCost)
-		if err != nil {
-			return err
-		}
+
+	if names := strings.Split(b.Name, " "); len(names) > 1 && b.PasswordInString == "" {
+		b.PasswordInString = names[0]
 	}
 
-	id := strings.Split(b.Email, "@")
-	if len(id) > 1 {
-		b.ID = id[0]
-	}
-
-	if b.Class == "student" {
-		b.ParentEmail = r.FormValue("parentEmail")
-		b.ParentNumber = r.FormValue("parentNumber")
+	var err error
+	b.Password, err = bcrypt.GenerateFromPassword([]byte(b.PasswordInString), values.DefaultCost)
+	if err != nil {
+		return err
 	}
 
 	values.MapEmailToName[b.Email] = b.Name
-	_, err := db.Collection(values.UsersCollectionName).InsertOne(ctx, b)
+	_, err = db.Collection(values.UsersCollectionName).InsertOne(ctx, b)
 	return err
 }

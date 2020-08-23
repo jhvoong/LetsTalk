@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter, { RouteConfig } from 'vue-router'
 import Login from '../views/Login.vue'
+import RegistUser from "../views/Register.vue"
 
 Vue.use(VueRouter)
 
@@ -16,6 +17,11 @@ const routes: Array<RouteConfig> = [
     name: 'Admin Login',
     component: Login,
     props: { isAdmin: true }
+  },
+  {
+    path: '/register',
+    name: "User Registration",
+    component: RegistUser,
   },
   {
     path: '/about',
