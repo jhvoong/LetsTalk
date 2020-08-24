@@ -1,8 +1,13 @@
 <template>
-  <div class="home" align="center">
-    <img alt="Unilag logo" src="../assets/unilag.svg" />
-    <p class="text-center">Welcome to the university of lagos chatting platform</p>
-  </div>
+  <v-row no-gutters class="fill-height">
+    <v-col cols="1">
+      <InnerSidebar />
+    </v-col>
+    <v-col cols="3">
+      <OuterSidebar />
+    </v-col>
+    <v-col cols="8"></v-col>
+  </v-row>
 </template>
 
 <script lang="ts">
@@ -12,11 +17,17 @@ import store from "@/store";
 import router from "@/router";
 import * as constants from "./Constants";
 
+import InnerSidebar from "../components/InnerSidebar.vue";
+import OuterSidebar from "../components/OuterSidebar.vue";
+
 let socket: WebSocket;
 
 export default Vue.extend({
   name: "Home",
-  components: {},
+  components: {
+    InnerSidebar,
+    OuterSidebar,
+  },
 
   data: () => ({}),
 
