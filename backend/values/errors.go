@@ -19,4 +19,6 @@ var (
 	ErrFileUpload              = errors.New("error while uploading file to server")
 	ErrPeerConnectionNotFound  = errors.New("PeerConnection not found")
 	ErrFileUploadLink          = errors.New("could not generate file upload link")
+	ErrTokenNotSpecified       = errors.New("Token was not specified")
+	ErrInvalidToken            = errors.New("Token specified is invalid")
 )

@@ -134,7 +134,6 @@ export default Vue.extend({
           name: this.name,
           DOB: this.DOB, // For now, we use the - syntax.
         },
-        withCredentials: true,
       })
         .then((Response) => {
           if (Response.status == 200) {

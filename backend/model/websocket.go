@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -35,6 +36,16 @@ var HubConstruct = Hub{
 }
 
 func (h *Hub) Run() {
+	Upgrader.CheckOrigin = func(r *http.Request) bool {
+		// ToDo: save host in config.json or .env
+		host := r.Header.Get("Origin")
+		if host == "https://127.0.0.1:8081" && r.TLS != nil && r.TLS.HandshakeComplete {
+			return true
+		}
+
+		return false
+	}
+
 	for {
 		select {
 		case s := <-h.Register:

@@ -44,7 +44,7 @@ func AdminLoginPOST(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 
 func AdminLoginGET(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	cookie := model.CookieDetail{CookieName: values.AdminCookieName, Collection: values.AdminCollectionName}
-	if err := cookie.CheckCookie(r, w); err == nil {
+	if err := cookie.CheckCookie(r); err == nil {
 		http.Redirect(w, r, "/admin/", 302)
 		return
 	}
@@ -57,7 +57,7 @@ func AdminLoginGET(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 
 func AdminPage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	cookie := model.CookieDetail{CookieName: values.AdminCookieName, Collection: values.AdminCollectionName}
-	if err := cookie.CheckCookie(r, w); err != nil {
+	if err := cookie.CheckCookie(r); err != nil {
 		log.Println(err)
 		http.Redirect(w, r, "/admin/login/", 302)
 		return
@@ -85,7 +85,7 @@ func AdminPage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 func UploadUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	cookie := model.CookieDetail{CookieName: values.AdminCookieName, Collection: values.AdminCollectionName}
-	err := cookie.CheckCookie(r, w)
+	err := cookie.CheckCookie(r)
 	if err != nil {
 		http.Redirect(w, r, "/adnin/login", 302)
 		return

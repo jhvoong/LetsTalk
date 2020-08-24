@@ -34,20 +34,14 @@ func (b CookieDetail) GenerateCookie(w http.ResponseWriter) (string, error) {
 	return encoded, nil
 }
 
-func (b *CookieDetail) CheckCookie(r *http.Request, w http.ResponseWriter) error {
-	cookie, err := r.Cookie(b.CookieName)
-	if err != nil {
-		return err
+func (b *CookieDetail) CheckCookie(r *http.Request) error {
+	cookie := r.FormValue("token")
+	if cookie == "" {
+		return values.ErrTokenNotSpecified
 	}
 
-	if err := cookieHandler.Decode(b.CookieName, cookie.Value, &b.Data); err != nil {
-		// Reset cookies if cookie validation fails.
-		http.SetCookie(w, &http.Cookie{
-			Name:    b.CookieName,
-			Expires: time.Now(),
-		})
-
-		return err
+	if err := cookieHandler.Decode(b.CookieName, cookie, &b.Data); err != nil {
+		return values.ErrInvalidToken
 	}
 
 	if b.Data.ExitTime.Before(time.Now().Local()) {
@@ -62,7 +56,7 @@ func (b *CookieDetail) CheckCookie(r *http.Request, w http.ResponseWriter) error
 		Expires   time.Time `json:"expires"`
 	}{}
 
-	if err = result.Decode(&cookieUUID); err != nil {
+	if err := result.Decode(&cookieUUID); err != nil {
 		return err
 	}
 

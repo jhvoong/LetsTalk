@@ -45,14 +45,7 @@
           <v-alert v-if="signinErrorDetails" dense text type="error">{{signinErrorDetails}}</v-alert>
         </v-col>
         <v-col cols="12">
-          <v-btn
-            @click="$router.push('/register')"
-            :disabled="detailsDisabled || !detailsValid"
-            color="green"
-            class="mr-4"
-            tile
-            dark
-          >Register</v-btn>
+          <v-btn @click="$router.push('/register')" color="green" class="mr-4" tile dark>Register</v-btn>
           <v-btn @click="loginUser()" :disabled="detailsDisabled || !detailsValid" tile>Log in</v-btn>
         </v-col>
       </v-row>
@@ -63,8 +56,6 @@
 <script lang="ts">
 import Vue from "vue";
 import Axios from "axios";
-import router from "@/router";
-import store from "@/store";
 
 export default Vue.extend({
   name: "Login",
@@ -113,8 +104,6 @@ export default Vue.extend({
           username: this.email,
           password: this.password,
         },
-
-        withCredentials: true,
       })
         .then((Response) => {
           if (Response.status == 200) {

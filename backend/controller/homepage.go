@@ -94,7 +94,7 @@ func HomePageLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 
 func validatUser(w http.ResponseWriter, r *http.Request) interface{} {
 	cookie := model.CookieDetail{CookieName: values.UserCookieName, Collection: values.UsersCollectionName}
-	if err := cookie.CheckCookie(r, w); err != nil {
+	if err := cookie.CheckCookie(r); err != nil {
 		return err
 	}
 

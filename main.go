@@ -27,10 +27,10 @@ func main() {
 	router := httprouter.New()
 
 	router.GET("/", controller.HomePage)
-	router.GET("/ws", controller.ServeWs)
 	router.GET("/login", controller.HomePageLoginGet)
 	router.GET("/admin/login", controller.AdminLoginGET)
 	router.GET("/admin", controller.AdminPage)
+	router.GET("/ws", controller.ServeWs)
 
 	router.POST("/login", controller.HomePageLoginPost)
 	router.POST("/register", controller.RegisterUserPost)
@@ -48,12 +48,10 @@ func main() {
 	router.ServeFiles("/assets/*filepath", http.Dir("./views/assets"))
 	log.Println("Webserver UP")
 
-	// handler := cors.Default().Handler(router)
 	handler := cors.New(cors.Options{
-		Debug:            true,
-		AllowCredentials: true,
+		Debug: true,
 		// ToDo: specify this in config.json file
-		AllowedOrigins: []string{"https://127.0.0.1:8081", "https://192.168.43.140:8081"},
+		AllowedOrigins: []string{"https://127.0.0.1:8081", "https://192.168.1.101:8081"},
 	}).Handler(router)
 
 	// Optional use of TLS due to Heroku serving TLS at low level.

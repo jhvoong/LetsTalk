@@ -17,6 +17,7 @@ const (
 
 // All request message types both clients and server
 const (
+	UnauthorizedAcces             = "UnauthorizedAccess"
 	NewFileUploadMsgType          = "NewFileUpload"
 	NewMessageMsgType             = "NewMessage"
 	RequestAllMessagesMsgType     = "RequestAllMessages"
