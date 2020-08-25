@@ -6,7 +6,9 @@
     <v-col cols="3">
       <OuterSidebar />
     </v-col>
-    <v-col cols="8"></v-col>
+    <v-col cols="8">
+      <ChatPage />
+    </v-col>
   </v-row>
 </template>
 
@@ -19,6 +21,7 @@ import * as constants from "./Constants";
 
 import InnerSidebar from "../components/InnerSidebar.vue";
 import OuterSidebar from "../components/OuterSidebar.vue";
+import ChatPage from "../components/ChatPage.vue";
 
 let socket: WebSocket;
 
@@ -27,6 +30,7 @@ export default Vue.extend({
   components: {
     InnerSidebar,
     OuterSidebar,
+    ChatPage,
   },
 
   data: () => ({}),

@@ -97,8 +97,6 @@ export default Vue.extend({
         ];
       }
 
-      console.log(URLs[0]);
-
       Axios.post(URLs[0], "", {
         params: {
           username: this.email,

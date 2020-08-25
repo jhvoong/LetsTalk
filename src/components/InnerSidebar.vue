@@ -50,7 +50,7 @@
           </v-col>
 
           <v-col class="my-2" cols="12">
-            <v-btn x-large icon>
+            <v-btn @click="logOff" x-large icon>
               <v-icon x-large>mdi-power-standby</v-icon>
             </v-btn>
           </v-col>
@@ -60,7 +60,7 @@
   </v-card>
 </template>
 
-<script>
+<script lang="ts">
 import Vue from "vue";
 import vuetify from "@/plugins/vuetify";
 
@@ -92,6 +92,11 @@ export default Vue.extend({
 
     onContact: function () {
       this.highlightedSidebarOption = "Contact";
+    },
+
+    logOff: function () {
+      this.$store.commit("setToken", "");
+      this.$router.push("/login");
     },
   },
 });

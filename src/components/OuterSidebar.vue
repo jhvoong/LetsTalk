@@ -3,7 +3,7 @@
     <v-row style="height: 25vh; justify-content: center;">
       <v-col cols="12" sm="8">
         <v-text-field
-          outlined
+          rounded
           filled
           prepend-inner-icon="mdi-magnify"
           flat
@@ -12,9 +12,9 @@
       </v-col>
 
       <v-col cols="12" class="text-center">
-        <v-btn outlined class="button_default" text rounded>All</v-btn>
-        <v-btn class="button_default" text rounded>Read</v-btn>
-        <v-btn class="button_default" text rounded>Unread</v-btn>
+        <v-btn outlined text rounded>All</v-btn>
+        <v-btn text rounded>Read</v-btn>
+        <v-btn text rounded>Unread</v-btn>
       </v-col>
 
       <v-col cols="12">
@@ -23,13 +23,13 @@
     </v-row>
 
     <v-container style=" height: 72vh;" class="overflow-y-auto" cols="12">
-      <v-list tile dense three-line>
-        <v-list-item-group color="black">
+      <v-list nav tile dense three-line>
+        <v-list-item-group mandatory>
           <v-list-item v-for="n in 100" :key="n" @click="loadChatContent(roomID)">
             <v-list-item-avatar>
-              <v-badge avatar bordered content="n" :value="n">
+              <v-badge bordered bottom color="deep-purple accent-4" dot offset-x="10" offset-y="10">
                 <v-avatar size="30">
-                  <v-img src="https://cdn.vuetifyjs.com/images/john.png"></v-img>
+                  <v-img src="https://cdn.vuetifyjs.com/images/lists/2.jpg"></v-img>
                 </v-avatar>
               </v-badge>
             </v-list-item-avatar>
