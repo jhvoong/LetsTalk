@@ -20,5 +20,3 @@ export default Vue.extend({
   }),
 });
 </script>
-
-st

@@ -26,7 +26,7 @@
       </v-app-bar>
     </v-col>
 
-    <v-col cols="12" style="height: 80vh;">
+    <v-col cols="12" style="height: 74vh;">
       <v-container class="overflow-y-auto scroll-behavior-smooth" style="height: 78vh;" fluid>
         <!-- <v-list width="70%">
           <v-list-item>
@@ -57,7 +57,7 @@
                       :src="require('../assets/unilag.svg')"
                     ></v-img>
                   </v-avatar>
-                  <v-card flat color="#f2f4f2" width="80%">
+                  <v-card flat :color="vuetify.framework.theme.dark?'':'#DCDCDC'" width="80%">
                     <v-card-text>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</v-card-text>
                   </v-card>
                 </v-row>
@@ -67,7 +67,7 @@
 
           <v-col cols="12">
             <div align="right">
-              <v-card flat color="#bbeaff" width="60%">
+              <v-card flat :color="vuetify.framework.theme.dark?'#778899':'#bbeaff'" width="60%">
                 <v-card-text
                   align="left"
                 >Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</v-card-text>
@@ -77,7 +77,7 @@
 
           <v-col cols="12">
             <div align="right">
-              <v-card flat color="#bbeaff" width="60%">
+              <v-card flat :color="vuetify.framework.theme.dark?'#778899':'#bbeaff'" width="60%">
                 <v-card-text
                   align="left"
                 >Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</v-card-text>
@@ -97,7 +97,7 @@
                       :src="require('../assets/unilag.svg')"
                     ></v-img>
                   </v-avatar>
-                  <v-card flat :color="$vuetify.framework.theme.dark?'':'#f2f4f2'" width="80%">
+                  <v-card flat :color="vuetify.framework.theme.dark?'':'#DCDCDC'" width="80%">
                     <v-card-text>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</v-card-text>
                   </v-card>
                 </v-row>
@@ -130,12 +130,14 @@
 
 <script lang="ts">
 import Vue from "vue";
-import vuetify from "vuetify/lib";
+import vuetify from "@/plugins/vuetify";
 
 export default Vue.extend({
-  vuetify,
   name: "ChatPage",
-  data: () => ({}),
+  data: () => ({
+    vuetify: vuetify,
+  }),
+  methods: {},
 });
 </script>
 

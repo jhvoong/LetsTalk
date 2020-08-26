@@ -17,7 +17,7 @@
 import Vue from "vue";
 import store from "@/store";
 import router from "@/router";
-import * as constants from "./Constants";
+import { MessageType } from "./Constants";
 
 import InnerSidebar from "../components/InnerSidebar.vue";
 import OuterSidebar from "../components/OuterSidebar.vue";
@@ -37,10 +37,10 @@ export default Vue.extend({
 
   methods: {
     onWSMessage: function (event: MessageEvent) {
-      const jsonContent: any = JSON.parse(event.data);
+      const jsonContent = JSON.parse(event.data);
 
       switch (jsonContent.msgType) {
-        case constants.MessageType.UnauthorizedAccess:
+        case MessageType.UnauthorizedAccess:
           this.onUnAuthorizedAccess();
           break;
       }
