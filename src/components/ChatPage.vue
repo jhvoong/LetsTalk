@@ -28,22 +28,6 @@
 
     <v-col cols="12" style="height: 74vh;">
       <v-container class="overflow-y-auto scroll-behavior-smooth" style="height: 78vh;" fluid>
-        <!-- <v-list width="70%">
-          <v-list-item>
-            <v-list-item-avatar height="min-content" width="min-content">
-              <v-avatar rounded>
-                <v-img height="100px" width="100px" contain :src="require('../assets/unilag.svg')"></v-img>
-              </v-avatar>
-            </v-list-item-avatar>
-
-            <v-list-item-content>
-              <v-card>
-
-              </v-card>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>-->
-
         <v-row>
           <v-col cols="12">
             <v-row style="width: 70%">
@@ -59,6 +43,9 @@
                   </v-avatar>
                   <v-card flat :color="vuetify.framework.theme.dark?'':'#DCDCDC'" width="80%">
                     <v-card-text>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</v-card-text>
+                    <v-card-subtitle align="right" class="ml-auto">
+                      <b>Name Here 10-11-2020 11:50pm</b>
+                    </v-card-subtitle>
                   </v-card>
                 </v-row>
               </v-col>
@@ -71,6 +58,9 @@
                 <v-card-text
                   align="left"
                 >Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</v-card-text>
+                <v-card-subtitle align="right" class="ml-auto">
+                  <b>Name Here 10-11-2020 11:50pm</b>
+                </v-card-subtitle>
               </v-card>
             </div>
           </v-col>
@@ -81,6 +71,9 @@
                 <v-card-text
                   align="left"
                 >Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</v-card-text>
+                <v-card-subtitle align="right" class="ml-auto">
+                  <b>Name Here 10-11-2020 11:50pm</b>
+                </v-card-subtitle>
               </v-card>
             </div>
           </v-col>
@@ -99,6 +92,9 @@
                   </v-avatar>
                   <v-card flat :color="vuetify.framework.theme.dark?'':'#DCDCDC'" width="80%">
                     <v-card-text>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</v-card-text>
+                    <v-card-subtitle align="right" class="ml-auto">
+                      <b>Name Here 10-11-2020 11:50pm</b>
+                    </v-card-subtitle>
                   </v-card>
                 </v-row>
               </v-col>

@@ -18,6 +18,24 @@ import (
 	"github.com/metaclips/LetsTalk/backend/values"
 )
 
+func (b User) CreateUser(r *http.Request) error {
+	b.Name = strings.Title(b.Name)
+
+	if names := strings.Split(b.Name, " "); len(names) > 1 && b.PasswordInString == "" {
+		b.PasswordInString = names[0]
+	}
+
+	var err error
+	b.Password, err = bcrypt.GenerateFromPassword([]byte(b.PasswordInString), values.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	values.MapEmailToName[b.Email] = b.Name
+	_, err = db.Collection(values.UsersCollectionName).InsertOne(ctx, b)
+	return err
+}
+
 func (b *User) getUser() error {
 	result := db.Collection(values.UsersCollectionName).FindOne(ctx, bson.M{
 		"_id": b.Email,
@@ -212,6 +230,7 @@ func (b User) validateUser(uniqueID string) error {
 	return nil
 }
 
+// ToDo: We should instead try to split messages and call partitioned messages, instead of consuming bandwidth.
 func (b Message) saveMessageContent() ([]string, error) {
 	var messages Room
 	result := db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{

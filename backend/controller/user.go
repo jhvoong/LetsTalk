@@ -29,7 +29,7 @@ func RegisterUserPost(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	}.CreateUser(r)
 
 	if err != nil {
-		if IsDup(err) {
+		if isMongoDup(err) {
 			http.Error(w, "Email already registered", http.StatusUnauthorized)
 		} else {
 			http.Error(w, "Internal error", http.StatusUnauthorized)
@@ -41,7 +41,7 @@ func RegisterUserPost(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	w.WriteHeader(http.StatusOK)
 }
 
-func IsDup(err error) bool {
+func isMongoDup(err error) bool {
 	var e mongo.WriteException
 	if errors.As(err, &e) {
 		for _, we := range e.WriteErrors {

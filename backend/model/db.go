@@ -9,7 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/metaclips/LetsTalk/backend/values"
 )
@@ -53,30 +52,10 @@ func InitDB() {
 		}
 	}
 
-	createNewAdminIfNotExist()
-
 	var users []User
 	getCollection(values.UsersCollectionName, &users)
 
 	for _, user := range users {
 		values.MapEmailToName[user.Email] = user.Name
 	}
-}
-
-func createNewAdminIfNotExist() {
-	password, err := bcrypt.GenerateFromPassword([]byte("admin"), values.DefaultCost)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	admin := Admin{
-		StaffDetails: User{
-			Email:    "admin@email.com",
-			Name:     "admin",
-			Password: password,
-		},
-		Super: true,
-	}
-
-	admin.CreateAdmin()
 }

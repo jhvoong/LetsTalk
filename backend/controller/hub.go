@@ -12,7 +12,10 @@ import (
 
 // ServeWs handles websocket requests from the peer, ensuring user is registered.
 func ServeWs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	r.ParseForm()
+	if err := r.ParseForm(); err != nil {
+		log.Errorln("error parsing form on websocket serve, err:", err)
+	}
+
 	cookie := model.CookieDetail{CookieName: values.UserCookieName, Collection: values.UsersCollectionName}
 
 	if err := cookie.CheckCookie(r); err != nil {

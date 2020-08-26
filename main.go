@@ -26,16 +26,10 @@ func main() {
 
 	router := httprouter.New()
 
-	router.GET("/", controller.HomePage)
-	router.GET("/login", controller.HomePageLoginGet)
-	router.GET("/admin/login", controller.AdminLoginGET)
-	router.GET("/admin", controller.AdminPage)
 	router.GET("/ws", controller.ServeWs)
 
 	router.POST("/login", controller.HomePageLoginPost)
 	router.POST("/register", controller.RegisterUserPost)
-	router.POST("/admin/login", controller.AdminLoginPOST)
-	router.POST("/admin/upload", controller.UploadUser)
 
 	port := values.Config.Port
 	if port == "" {
