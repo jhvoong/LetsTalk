@@ -7,23 +7,23 @@
       <OuterSidebar />
     </v-col>
     <v-col cols="8">
-      <ChatPage />
+      <ChatPage :send="sendMessage" />
     </v-col>
   </v-row>
 </template>
 
 <script lang="ts">
+let socket: WebSocket;
 // @ is an alias to /src
 import Vue from "vue";
 import store from "@/store";
 import router from "@/router";
+
 import { MessageType } from "./Constants";
 
 import InnerSidebar from "../components/InnerSidebar.vue";
 import OuterSidebar from "../components/OuterSidebar.vue";
 import ChatPage from "../components/ChatPage.vue";
-
-let socket: WebSocket;
 
 export default Vue.extend({
   name: "Home",
@@ -64,6 +64,14 @@ export default Vue.extend({
       router.push("/login");
       socket.close();
     },
+
+    sendMessage: function (message: string) {
+      if (typeof message != "string") {
+        return;
+      }
+
+      socket.send(message);
+    },
   },
 
   created() {
@@ -78,12 +86,10 @@ export default Vue.extend({
 
     // Probably write a test for this.
     if (URLs.length == 0) {
-      console.log("Url not defined");
       router.push("/login");
       return;
     }
 
-    console.log(URLs);
     socket = new WebSocket(
       "wss://" + URLs[1] + "/ws?token=" + store.state.token
     );

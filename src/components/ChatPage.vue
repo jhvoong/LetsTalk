@@ -26,7 +26,7 @@
       </v-app-bar>
     </v-col>
 
-    <v-col cols="12" style="height: 74vh;">
+    <v-col cols="12" style="height: 75vh;">
       <v-container class="overflow-y-auto scroll-behavior-smooth" style="height: 78vh;" fluid>
         <v-row>
           <v-col cols="12">
@@ -113,12 +113,12 @@
         append-outer-icon="mdi-send"
         solo
         hide-details="auto"
-        dense
         no-resize
         rows="3"
         rounded
         clearable
-        :readonly="disableTextField"
+        @click:append-outer="sendMessage"
+        @keyup.enter.exact="sendMessage"
       ></v-textarea>
     </v-col>
   </v-row>
@@ -130,10 +130,31 @@ import vuetify from "@/plugins/vuetify";
 
 export default Vue.extend({
   name: "ChatPage",
+
+  props: {
+    sendWSMessage: { type: Function },
+  },
+
   data: () => ({
     vuetify: vuetify,
+    messageContent: "",
   }),
-  methods: {},
+
+  methods: {
+    sendMessage: function () {
+      if (!this.messageContent.match(/\S/)) return;
+
+      const message = {
+        msgType: "NewMessage",
+        message: this.messageContent,
+        userID: this.$store.state.email,
+        type: "txt",
+      };
+
+      this.sendWSMessage(JSON.stringify(message));
+      this.messageContent = "";
+    },
+  },
 });
 </script>
 

@@ -69,8 +69,8 @@ export default Vue.extend({
     detailsDisabled: false,
 
     signinErrorDetails: "",
-    email: "",
     password: "",
+    email: "",
 
     emailRules: [
       (v: string) => !!v || "E-mail is required",
@@ -106,6 +106,8 @@ export default Vue.extend({
         .then((Response) => {
           if (Response.status == 200) {
             this.$store.commit("setToken", Response.data);
+            this.$store.commit("setEmail", this.email);
+
             this.$router.push("/");
           }
         })
