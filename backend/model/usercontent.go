@@ -351,8 +351,11 @@ func (b Joined) acceptRoomRequest() ([]string, error) {
 	return messages.RegisteredUsers, err
 }
 
+// requestUserToJoinRoom confirms if requester is part of room then sends join request to user.
+// Join request is saved to database so that if user wants to join, it is verified.
 func (b JoinRequest) requestUserToJoinRoom(userToJoinEmail string) ([]string, error) {
 	var room Room
+	// ToDo: we dont need to retrieve room messages here.
 	result := db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{"_id": b.RoomID})
 
 	if err := result.Decode(&room); err != nil {
@@ -364,6 +367,7 @@ func (b JoinRequest) requestUserToJoinRoom(userToJoinEmail string) ([]string, er
 	for _, registeredUser := range room.RegisteredUsers {
 		if registeredUser == b.RequestingUserID {
 			requesterLegit = true
+
 			break
 		} else if registeredUser == userToJoinEmail {
 			return nil, values.ErrUserExistInRoom
@@ -387,6 +391,7 @@ func (b JoinRequest) requestUserToJoinRoom(userToJoinEmail string) ([]string, er
 			return nil, values.ErrUserAlreadyRequested
 		}
 	}
+
 	user.JoinRequest = append(user.JoinRequest, b)
 
 	_, err := db.Collection(values.UsersCollectionName).UpdateOne(ctx, bson.M{"_id": userToJoinEmail},
@@ -400,6 +405,7 @@ func (b JoinRequest) requestUserToJoinRoom(userToJoinEmail string) ([]string, er
 		Message: fmt.Sprintf("%s was requested to join the room by %s", userToJoinEmail, b.RequestingUserID),
 		Type:    getContentType(values.INFO),
 	}
+
 	room.Messages = append(room.Messages, message)
 
 	_, err = db.Collection(values.RoomsCollectionName).

@@ -4,7 +4,7 @@
       <InnerSidebar />
     </v-col>
     <v-col cols="3">
-      <OuterSidebar />
+      <OuterSidebar :joinedRooms="joinedRooms" />
     </v-col>
     <v-col cols="8">
       <ChatPage :send="sendMessage" />
@@ -20,10 +20,12 @@ import store from "@/store";
 import router from "@/router";
 
 import { MessageType } from "./Constants";
+// import { JoinedRoom } from "./Types";
 
 import InnerSidebar from "../components/InnerSidebar.vue";
 import OuterSidebar from "../components/OuterSidebar.vue";
 import ChatPage from "../components/ChatPage.vue";
+import { JoinedRoom } from "./Types";
 
 export default Vue.extend({
   name: "Home",
@@ -33,7 +35,10 @@ export default Vue.extend({
     ChatPage,
   },
 
-  data: () => ({}),
+  data: () => ({
+    joinedRooms: new Array<JoinedRoom>(),
+    roomJoinRequest: [],
+  }),
 
   methods: {
     onWSMessage: function (event: MessageEvent) {
@@ -43,11 +48,25 @@ export default Vue.extend({
         case MessageType.UnauthorizedAccess:
           this.onUnAuthorizedAccess();
           break;
+
+        case MessageType.WebsocketOpen:
+          this.joinedRooms = jsonContent.joinedRooms;
+          this.roomJoinRequest = jsonContent.roomJoinRequest;
+          console.log(this.joinedRooms[0].roomID);
+          break;
       }
     },
 
     onWSOpen: function () {
       console.log("Websocket open.");
+
+      // Fetch users content from API.
+      // Contents that are to be fetched from API are, Registered rooms and room request.
+      const message = {
+        msgType: MessageType.WebsocketOpen,
+      };
+
+      socket.send(JSON.stringify(message));
     },
 
     onWSError: function (event: Event) {

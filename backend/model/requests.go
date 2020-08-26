@@ -459,9 +459,9 @@ func handleLoadUserContent(email string) {
 	}
 
 	request := map[string]interface{}{
-		"msgType":  "WebsocketOpen",
-		"rooms":    userInfo.RoomsJoined,
-		"requests": userInfo.JoinRequest,
+		"msgType":         "WebsocketOpen",
+		"joinedRooms":     userInfo.RoomsJoined,
+		"roomJoinRequest": userInfo.JoinRequest,
 	}
 
 	if data, err := json.Marshal(request); err == nil && HubConstruct.Users[email] != nil {

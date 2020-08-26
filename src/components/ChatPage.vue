@@ -44,7 +44,7 @@
                   <v-card flat :color="vuetify.framework.theme.dark?'':'#DCDCDC'" width="80%">
                     <v-card-text>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</v-card-text>
                     <v-card-subtitle align="right" class="ml-auto">
-                      <b>Name Here 10-11-2020 11:50pm</b>
+                      <b>Name Here 10-11-2020</b>
                     </v-card-subtitle>
                   </v-card>
                 </v-row>
@@ -59,7 +59,7 @@
                   align="left"
                 >Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</v-card-text>
                 <v-card-subtitle align="right" class="ml-auto">
-                  <b>Name Here 10-11-2020 11:50pm</b>
+                  <b>Name Here 10-11-2020</b>
                 </v-card-subtitle>
               </v-card>
             </div>
@@ -72,7 +72,7 @@
                   align="left"
                 >Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</v-card-text>
                 <v-card-subtitle align="right" class="ml-auto">
-                  <b>Name Here 10-11-2020 11:50pm</b>
+                  <b>Name Here 10-11-2020</b>
                 </v-card-subtitle>
               </v-card>
             </div>
@@ -93,7 +93,7 @@
                   <v-card flat :color="vuetify.framework.theme.dark?'':'#DCDCDC'" width="80%">
                     <v-card-text>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</v-card-text>
                     <v-card-subtitle align="right" class="ml-auto">
-                      <b>Name Here 10-11-2020 11:50pm</b>
+                      <b>Name Here 10-11-2020</b>
                     </v-card-subtitle>
                   </v-card>
                 </v-row>
@@ -132,7 +132,7 @@ export default Vue.extend({
   name: "ChatPage",
 
   props: {
-    sendWSMessage: { type: Function },
+    sendWSMessage: Function,
   },
 
   data: () => ({

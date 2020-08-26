@@ -13,7 +13,7 @@
         "CertPath": "cert.pem",
         "KeyPath": "key.pem"
     },
-    "DbHost": "mongodb://localhost:27017",
+    "DbHost": "mongodb+srv://admin:admin@cluster0-huyp5.mongodb.net/test?retryWrites=true&w=majority",
     "DbName": "unilagDatabase",
     "DropboxToken": "",
     "EnableClassSessionRecord": true,

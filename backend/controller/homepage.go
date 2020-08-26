@@ -34,22 +34,6 @@ func HomePageLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	sendResponse(w, token)
 }
 
-func setLoginDetails(errors, isAdmin bool, errorDetail, link string) struct {
-	SigninError, Admin bool
-	Login, ErrorDetail string
-} {
-
-	return struct {
-		SigninError, Admin bool
-		Login, ErrorDetail string
-	}{
-		errors,
-		isAdmin,
-		link,
-		errorDetail,
-	}
-}
-
 func sendResponse(w http.ResponseWriter, data interface{}) {
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {

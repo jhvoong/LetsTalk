@@ -1,7 +1,7 @@
 <template>
   <v-container fluid>
     <v-row style="height: 25vh; justify-content: center;">
-      <v-col cols="12" sm="8">
+      <v-col cols="12" sm="10">
         <v-text-field
           rounded
           filled
@@ -25,11 +25,15 @@
     <v-container style=" height: 72vh;" class="overflow-y-auto" cols="12">
       <v-list nav tile dense three-line>
         <v-list-item-group mandatory>
-          <v-list-item v-for="n in 100" :key="n" @click="loadChatContent(roomID)">
+          <v-list-item
+            v-for="(joinedRoom,index) in joinedRooms"
+            :key="index"
+            @click="loadChatContent()"
+          >
             <v-list-item-avatar>
               <v-badge bordered bottom color="deep-purple accent-4" dot offset-x="10" offset-y="10">
                 <v-avatar size="30">
-                  <v-img src="https://cdn.vuetifyjs.com/images/lists/2.jpg"></v-img>
+                  <v-img :src="joinedRoom.icon?joinedRoom.icon:require('../assets/unilag.svg')"></v-img>
                 </v-avatar>
               </v-badge>
             </v-list-item-avatar>
@@ -40,10 +44,9 @@
                   <v-col
                     cols="auto"
                     class="d-inline-block text-truncate"
-                    align="center"
                     style="width: 70%"
                     justify="start"
-                  >User name should be here contactskkskskskkskskskskksksksksk</v-col>
+                  >{{joinedRoom.roomName}}</v-col>
                 </v-row>
               </v-list-item-title>
 
@@ -58,14 +61,23 @@
   </v-container>
 </template>
 
-<script>
+<script lang="ts">
 import Vue from "vue";
+import { Prop } from "vue/types/options";
+
+import { JoinedRoom, RecentChatPreview } from "../views/Types";
 
 export default Vue.extend({
   name: "OuterSidebar",
-  data: () => ({
-    rooms: {},
-  }),
+
+  props: {
+    joinedRooms: Array as Prop<JoinedRoom[]>,
+    recentChatPreview: {} as Prop<RecentChatPreview>,
+  },
+
+  data: () => ({}),
+
+  methods: {},
 });
 </script>
 

@@ -29,11 +29,10 @@ type CookieData struct {
 }
 
 type User struct {
-	IsAdmin bool   `bson:"isAdmin"`
-	Email   string `bson:"_id" json:"email"`
-	Name    string `bson:"name" json:"name"`
-	DOB     string `bson:"age" json:"age"`
-	Class   string `bson:"class" json:"class"`
+	Email string `bson:"_id" json:"email"`
+	Name  string `bson:"name" json:"name"`
+	DOB   string `bson:"age" json:"age"`
+	Class string `bson:"class" json:"class"`
 	// ID should either be users matric or leading email stripping @....
 	ParentEmail      string        `bson:"parentEmail" json:"parentEmail"`
 	ParentNumber     string        `bson:"parentNumber" json:"parentNumber"`
@@ -48,6 +47,7 @@ type User struct {
 type RoomsJoined struct {
 	RoomID   string `bson:"rooomID" json:"roomID"`
 	RoomName string `bson:"rooomName" json:"roomName"`
+	Icon     string `bson:"icon" json:"icon"`
 }
 
 type JoinRequest struct {
@@ -55,7 +55,7 @@ type JoinRequest struct {
 	RoomName           string   `bson:"roomName" json:"roomName"`
 	RequestingUserName string   `bson:"requestingUserName" json:"requestingUserName"`
 	RequestingUserID   string   `bson:"requestingUserID" json:"requestingUserID"`
-	Users              []string `bson:"-" json:"users"`
+	Users              []string `bson:"-" json:"users"` // Users whom requests are to be sent to.
 }
 
 type Admin struct {
