@@ -5,8 +5,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -127,13 +128,13 @@ func (msg messageBytes) handleNewMessage(author string) {
 	// Save message to database ensuring user is registered to room.
 	registeredUsers, err := newMessage.saveMessageContent()
 	if err != nil {
-		log.Println("Error saving msg to db", err, author)
+		log.Errorln("error saving msg to db, err:", err, author)
 		return
 	}
 
 	jsonContent, err := json.Marshal(newMessage)
 	if err != nil {
-		log.Println("Error converted message to json content", err)
+		log.Errorln("error converted message to json content, err:", err)
 		return
 	}
 
@@ -319,14 +320,14 @@ func (msg messageBytes) handleUploadFileUploadComplete() {
 	data.MsgType = values.UploadFileSuccessMsgType
 
 	roomUsers, err := Message{
-		RoomID:   data.RoomID,
-		UserID:   data.UserID,
-		Name:     data.UserName,
-		Message:  data.FileName,
-		Time:     time.Now().Format(values.TimeLayout),
-		Type:     "file",
-		FileSize: data.FileSize,
-		FileHash: data.FileHash,
+		RoomID:  data.RoomID,
+		UserID:  data.UserID,
+		Name:    data.UserName,
+		Message: data.FileName,
+		Time:    time.Now().Format(values.TimeLayout),
+		Type:    "file",
+		Size:    data.FileSize,
+		Hash:    data.FileHash,
 	}.saveMessageContent()
 
 	if err != nil {
@@ -416,37 +417,34 @@ func handleSearchUser(searchText, user string) {
 	HubConstruct.sendMessage(jsonContent, user)
 }
 
-// handleRequestAllMessages coallates all messages in a particular room.
-func handleRequestAllMessages(roomID, author string) {
-	room := Room{RoomID: roomID}
-	if err := room.getAllMessageInRoom(); err != nil {
-		log.Println("could not get all messages in room, err:", err)
+// handleRequestAllMessages fetches messages given the specified message room ID.
+func (msg messageBytes) handleRequestMessages(user string) {
+	room := Room{}
+	if err := json.Unmarshal(msg, &room); err != nil {
+		log.Errorln("could not unmarshall file on handle request partitioned message, err:", err)
 		return
 	}
 
-	onlineUsers := make(map[string]bool)
-	for _, user := range room.RegisteredUsers {
-		if name, ok := values.MapEmailToName[user]; ok {
-			nameAndEmail := fmt.Sprintf("%s (%s)", name, user)
-			onlineUsers[nameAndEmail] = HubConstruct.Users[user] != nil
-		}
+	if err := room.getPartitionedMessageInRoom(); err != nil {
+		log.Errorln("could not get all messages in room, err:", err)
+		return
 	}
 
 	data := map[string]interface{}{
-		"messages":    room.Messages,
-		"msgType":     "RequestAllMessages",
-		"roomName":    room.RoomName,
-		"roomID":      roomID,
-		"onlineUsers": onlineUsers,
+		"msgType":   "RequestAllMessages",
+		"messages":  room.Messages,
+		"roomName":  room.RoomName,
+		"roomID":    room.RoomID,
+		"roomUsers": room.RegisteredUsers,
 	}
 
 	jsonContent, err := json.Marshal(&data)
 	if err != nil {
-		log.Println("could not marshal images, err:", err)
+		log.Errorln("could not marshal images, err:", err)
 		return
 	}
 
-	HubConstruct.sendMessage(jsonContent, author)
+	HubConstruct.sendMessage(jsonContent, user)
 }
 
 // handleLoadUserContent loads all users contents on page load.

@@ -39,4 +39,5 @@ func sendResponse(w http.ResponseWriter, data interface{}) {
 	if err != nil {
 		log.Errorf("error sending response, err: %s \n", err.Error())
 	}
+
 }

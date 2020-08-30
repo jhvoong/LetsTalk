@@ -1,4 +1,5 @@
 export const MessageType = {
     UnauthorizedAccess: "UnauthorizedAccess",
-    WebsocketOpen: "WebsocketOpen"
+    WebsocketOpen: "WebsocketOpen",
+    RequestMessages: "RequestMessages",
 }

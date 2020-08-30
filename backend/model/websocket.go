@@ -3,9 +3,10 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/websocket"
 
@@ -167,7 +168,7 @@ func (s Subscription) ReadPump(user string) {
 		// TODO: Always enquire for userID.
 		data := struct {
 			MsgType    string `json:"msgType"`
-			RoomID     string `json:"roomID"`
+			User       string `json:"userID"`
 			SearchText string `json:"searchText"`
 		}{}
 
@@ -176,9 +177,19 @@ func (s Subscription) ReadPump(user string) {
 			log.Println("could not unmarshal json")
 		}
 
+		if data.User != user {
+			log.Warningf("an invalidated user tried to make websocket requests, invalidated user: %s, user: %s", data.User, user)
+		}
+
 		switch data.MsgType {
 		// TODO: add support to remove message.
 		// TODO: users should choose if to join chat.
+		case values.WebsocketOpenMsgType:
+			handleLoadUserContent(user)
+
+		case values.RequestMessages:
+			msg.handleRequestMessages(user)
+
 		case values.NewRoomCreatedMsgType:
 			msg.handleCreateNewRoom()
 
@@ -218,14 +229,8 @@ func (s Subscription) ReadPump(user string) {
 		case values.NewMessageMsgType:
 			msg.handleNewMessage(user)
 
-		case values.RequestAllMessagesMsgType:
-			handleRequestAllMessages(data.RoomID, user)
-
 		case values.SearchUserMsgType:
 			handleSearchUser(data.SearchText, user)
-
-		case values.WebsocketOpenMsgType:
-			handleLoadUserContent(user)
 
 		default:
 			log.Println("Could not convert required type", data.MsgType)

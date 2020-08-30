@@ -123,7 +123,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 					UserID:      sdp.UserID,
 					Type:        "classSessionLink",
 					MessageType: "ClassSessionLink",
-					FileHash:    sdp.ClassSessionID,
+					Hash:        sdp.ClassSessionID,
 				}
 
 				roomUsers, err := message.saveMessageContent()
@@ -291,11 +291,11 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 
 	// Send back answer SDP to client and also class notification to all users in room.
 	roomUsers, err := Message{
-		RoomID:   sdp.RoomID,
-		Name:     sdp.AuthorName,
-		UserID:   sdp.UserID,
-		Type:     "classSession",
-		FileHash: sdp.ClassSessionID,
+		RoomID: sdp.RoomID,
+		Name:   sdp.AuthorName,
+		UserID: sdp.UserID,
+		Type:   "classSession",
+		Hash:   sdp.ClassSessionID,
 	}.saveMessageContent()
 
 	if err != nil {

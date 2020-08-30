@@ -25,7 +25,6 @@ type CookieData struct {
 	ExitTime time.Time
 	UUID     string
 	Email    string
-	Super    bool
 }
 
 type User struct {
@@ -34,14 +33,11 @@ type User struct {
 	DOB   string `bson:"age" json:"age"`
 	Class string `bson:"class" json:"class"`
 	// ID should either be users matric or leading email stripping @....
-	ParentEmail      string        `bson:"parentEmail" json:"parentEmail"`
-	ParentNumber     string        `bson:"parentNumber" json:"parentNumber"`
 	Password         []byte        `bson:"password" json:"-"`
 	PasswordInString string        `bson:"-" json:"password"`
-	Faculty          string        `bson:"faculty" json:"faculty"`
-	UUID             string        `bson:"loginUUID" json:"uuid"`
 	RoomsJoined      []RoomsJoined `bson:"roomsJoined" json:"roomsJoined"`
 	JoinRequest      []JoinRequest `bson:"joinRequest" json:"joinRequest"`
+	UUID             string        `bson:"loginUUID" json:"uuid"`
 }
 
 type RoomsJoined struct {
@@ -58,28 +54,30 @@ type JoinRequest struct {
 	Users              []string `bson:"-" json:"users"` // Users whom requests are to be sent to.
 }
 
-type Admin struct {
-	StaffDetails User `bson:",inline"`
-	Super        bool `bson:"super" json:"super"`
-}
-
+// Room struct defineds content details for users room.
+// Message count is used to track amount of messages sent by users in room,
+// this helps with partitioning messages on retrieval, messages are retrieved in 20s on request.
 type Room struct {
 	RoomID          string    `bson:"_id" json:"email"`
 	RoomName        string    `bson:"roomName" json:"roomName"`
-	RegisteredUsers []string  `bson:"registeredUsers"`
-	Messages        []Message `bson:"messages" json:"messages"`
+	RegisteredUsers []string  `bson:"registeredUsers" json:"registeredUsers"`
+	MessageCount    int       `bson:"messageCount" json:"-"`
+	Messages        []Message `bson:"-" json:"messages"`
 }
 
+// Message struct defines user message contents, size and hash is defined if user is sending files.
+// Index is used to track message count as to Rooms messages, this should help with partitioning if we
+// are to retrieve message of a particular count.
 type Message struct {
-	RoomID      string `bson:"-" json:"roomID,omitempty"`
+	RoomID      string `bson:"roomID" json:"roomID,omitempty"`
 	Message     string `bson:"message" json:"message,omitempty"`
-	FileSize    string `bson:"fileSize,omitempty" json:"fileSize,omitempty"`
-	FileHash    string `bson:"fileHash,omitempty" json:"fileHash,omitempty"`
 	UserID      string `bson:"userID" json:"userID,omitempty"`
 	Name        string `bson:"name" json:"name,omitempty"`
-	Index       int    `bson:"index" json:"index,omitempty"`
 	Time        string `bson:"time" json:"time,omitempty"`
 	Type        string `bson:"type" json:"type,omitempty"`
+	Size        string `bson:"size,omitempty" json:"size,omitempty"`
+	Hash        string `bson:"hash,omitempty" json:"hash,omitempty"`
+	Index       int    `bson:"index" json:"index,omitempty"`
 	MessageType string `bson:"-" json:"msgType,omitempty"`
 }
 

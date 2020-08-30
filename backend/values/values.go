@@ -20,7 +20,7 @@ const (
 	UnauthorizedAcces             = "UnauthorizedAccess"
 	NewFileUploadMsgType          = "NewFileUpload"
 	NewMessageMsgType             = "NewMessage"
-	RequestAllMessagesMsgType     = "RequestAllMessages"
+	RequestMessages               = "RequestMessages"
 	SearchUserMsgType             = "SearchUser"
 	WebsocketOpenMsgType          = "WebsocketOpen"
 	NewRoomCreatedMsgType         = "NewRoomCreated"

@@ -4,7 +4,7 @@
       <InnerSidebar />
     </v-col>
     <v-col cols="3">
-      <OuterSidebar :joinedRooms="joinedRooms" />
+      <OuterSidebar :joinedRooms="joinedRooms" :loadChatContent="loadChatContent" />
     </v-col>
     <v-col cols="8">
       <ChatPage :send="sendMessage" />
@@ -25,7 +25,7 @@ import { MessageType } from "./Constants";
 import InnerSidebar from "../components/InnerSidebar.vue";
 import OuterSidebar from "../components/OuterSidebar.vue";
 import ChatPage from "../components/ChatPage.vue";
-import { JoinedRoom } from "./Types";
+import { JoinedRoom, RoomPageDetails } from "./Types";
 
 export default Vue.extend({
   name: "Home",
@@ -36,12 +36,33 @@ export default Vue.extend({
   },
 
   data: () => ({
-    joinedRooms: new Array<JoinedRoom>(),
-    roomJoinRequest: [],
+    joinedRooms: [] as JoinedRoom[],
+
+    messages: {} as RoomPageDetails,
   }),
 
   methods: {
-    onWSMessage: function (event: MessageEvent) {
+    onUnAuthorizedAccess: function () {
+      router.push("/login");
+      socket.close();
+    },
+
+    sendMessage: function (message: string) {
+      socket.send(message);
+    },
+
+    loadChatContent: function (roomID: string) {
+      const message = {
+        msgType: MessageType.RequestMessages,
+        roomID: roomID,
+      };
+
+      socket.send(JSON.stringify(message));
+    },
+  },
+
+  created() {
+    socket.onmessage = (event: MessageEvent) => {
       const jsonContent = JSON.parse(event.data);
 
       switch (jsonContent.msgType) {
@@ -51,50 +72,14 @@ export default Vue.extend({
 
         case MessageType.WebsocketOpen:
           this.joinedRooms = jsonContent.joinedRooms;
-          this.roomJoinRequest = jsonContent.roomJoinRequest;
-          console.log(this.joinedRooms[0].roomID);
+          break;
+
+        case MessageType.RequestMessages:
           break;
       }
-    },
+    };
 
-    onWSOpen: function () {
-      console.log("Websocket open.");
-
-      // Fetch users content from API.
-      // Contents that are to be fetched from API are, Registered rooms and room request.
-      const message = {
-        msgType: MessageType.WebsocketOpen,
-      };
-
-      socket.send(JSON.stringify(message));
-    },
-
-    onWSError: function (event: Event) {
-      // Reconnect Websocket if not UnAuthorized.
-      console.log("Websocket errored.", event);
-    },
-
-    onWSClose: function (closeEvent: CloseEvent) {
-      // We can create a dialog and ask users if they want to reconnect.
-      console.log("Websocket closed.", closeEvent);
-    },
-
-    onUnAuthorizedAccess: function () {
-      router.push("/login");
-      socket.close();
-    },
-
-    sendMessage: function (message: string) {
-      if (typeof message != "string") {
-        return;
-      }
-
-      socket.send(message);
-    },
-  },
-
-  created() {
-    // Verify if token is specified.
+    // Verify login, if token is specified.
     if (store.state.token == "") {
       router.push("/login");
       return;
@@ -113,13 +98,27 @@ export default Vue.extend({
       "wss://" + URLs[1] + "/ws?token=" + store.state.token
     );
 
-    socket.onerror = this.onWSError;
+    socket.onerror = (event: Event) => {
+      // Reconnect Websocket if not UnAuthorized.
+      console.log("Websocket errored.", event);
+    };
 
-    socket.onopen = this.onWSOpen;
+    socket.onopen = () => {
+      console.log("Websocket open.");
 
-    socket.onmessage = this.onWSMessage;
+      // Fetch users content from API.
+      // Contents that are to be fetched from API are, Registered rooms and room request.
+      const message = {
+        msgType: MessageType.WebsocketOpen,
+      };
 
-    socket.onclose = this.onWSClose;
+      socket.send(JSON.stringify(message));
+    };
+
+    socket.onclose = function (closeEvent: CloseEvent) {
+      // We can create a dialog and ask users if they want to reconnect.
+      console.log("Websocket closed.", closeEvent);
+    };
   },
 });
 </script>

@@ -28,7 +28,7 @@
           <v-list-item
             v-for="(joinedRoom,index) in joinedRooms"
             :key="index"
-            @click="loadChatContent()"
+            @click="loadChatContent(joinedRoom.roomID)"
           >
             <v-list-item-avatar>
               <v-badge bordered bottom color="deep-purple accent-4" dot offset-x="10" offset-y="10">
@@ -73,6 +73,8 @@ export default Vue.extend({
   props: {
     joinedRooms: Array as Prop<JoinedRoom[]>,
     recentChatPreview: {} as Prop<RecentChatPreview>,
+
+    loadChatContent: Function,
   },
 
   data: () => ({}),

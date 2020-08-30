@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
@@ -230,19 +231,23 @@ func (b User) validateUser(uniqueID string) error {
 	return nil
 }
 
-// ToDo: We should instead try to split messages and call partitioned messages, instead of consuming bandwidth.
+// saveMessageContent saves users messages to database.
+// Messages are stored using individual Insertion so that all message in room can be retrieved in partition.
 func (b Message) saveMessageContent() ([]string, error) {
-	var messages Room
-	result := db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{
-		"_id": b.RoomID,
-	})
+	var roomDetails Room
 
-	if err := result.Decode(&messages); err != nil {
+	opts := options.FindOneAndUpdate().SetProjection(bson.M{"roomID": 0, "roomName": 0}).
+		SetReturnDocument(options.After)
+
+	result := db.Collection(values.RoomsCollectionName).
+		FindOneAndUpdate(ctx, bson.M{"_id": b.RoomID}, opts)
+
+	if err := result.Decode(&roomDetails); err != nil {
 		return nil, err
 	}
 
 	var userExists bool
-	for _, user := range messages.RegisteredUsers {
+	for _, user := range roomDetails.RegisteredUsers {
 		if b.UserID == user {
 			userExists = true
 			break
@@ -253,11 +258,47 @@ func (b Message) saveMessageContent() ([]string, error) {
 		return nil, values.ErrInvalidUser
 	}
 
-	messages.Messages = append(messages.Messages, b)
-	_, err := db.Collection(values.RoomsCollectionName).UpdateOne(ctx, bson.M{"_id": b.RoomID},
-		bson.M{"$set": bson.M{"messages": messages.Messages}})
+	_, err := db.Collection(values.MessageCollectionName).InsertOne(ctx, b)
 
-	return messages.RegisteredUsers, err
+	return roomDetails.RegisteredUsers, err
+}
+
+// getPartitionedMessageInRoom retrieves messages for a particular room in the DB.
+// Retrieved messages are collected in partitions of 20s per room messages. Last message index is to
+// be sent by client so that the next recurring messages are fetched from database. If message count is say 30
+// It is assumed the client has load messages from index >=30 and want to fetch messages from index 10 to 20.
+// If index is a zero, the last 20 messages are retrieved.
+func (b *Room) getPartitionedMessageInRoom() error {
+	if b.MessageCount == 0 {
+		opts := options.FindOne().SetProjection(bson.M{"roomID": 0, "roomName": 0, "registeredUsers": 0})
+
+		messsageCountResult := db.Collection(values.RoomsCollectionName).
+			FindOne(ctx, bson.M{"_id": b.RoomID}, opts)
+
+		var room Room
+
+		if err := messsageCountResult.Decode(&room); err != nil {
+			return err
+		}
+
+		b.MessageCount = room.MessageCount
+	}
+
+	var messages []Message
+
+	result, err := db.Collection(values.MessageCollectionName).
+		Find(ctx, bson.M{"roomID": b.RoomID, "index": bson.M{"$gt": b.MessageCount - 20, "$lt": b.MessageCount}})
+
+	if err != nil {
+		return err
+	}
+
+	if err := result.Decode(&messages); err != nil {
+		return err
+	}
+
+	b.Messages = messages
+	return nil
 }
 
 func (b NewRoomRequest) createNewRoom() (string, error) {
@@ -282,16 +323,6 @@ func (b NewRoomRequest) createNewRoom() (string, error) {
 	}
 
 	return chats.RoomID, nil
-}
-
-func (b *Room) getAllMessageInRoom() error {
-	result := db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{"_id": b.RoomID})
-
-	if err := result.Decode(&b); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (b Joined) acceptRoomRequest() ([]string, error) {
