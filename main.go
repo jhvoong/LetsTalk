@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/gob"
-	"log"
 	"net/http"
 	"os"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
@@ -40,12 +41,12 @@ func main() {
 	}
 
 	router.ServeFiles("/assets/*filepath", http.Dir("./views/assets"))
-	log.Println("Webserver UP")
+	log.Infoln("Webserver UP")
 
 	handler := cors.New(cors.Options{
 		Debug: true,
 		// ToDo: specify this in config.json file
-		AllowedOrigins: []string{"https://127.0.0.1:8081", "https://192.168.1.101:8081"},
+		AllowedOrigins: []string{"https://127.0.0.1:8081", "https://192.168.1.101:8081", "https://192.168.43.140:8081"},
 	}).Handler(router)
 
 	// Optional use of TLS due to Heroku serving TLS at low level.

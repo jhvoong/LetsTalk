@@ -41,8 +41,8 @@ type User struct {
 }
 
 type RoomsJoined struct {
-	RoomID   string `bson:"rooomID" json:"roomID"`
-	RoomName string `bson:"rooomName" json:"roomName"`
+	RoomID   string `bson:"roomID" json:"roomID"`
+	RoomName string `bson:"roomName" json:"roomName"`
 	Icon     string `bson:"icon" json:"icon"`
 }
 
@@ -57,12 +57,14 @@ type JoinRequest struct {
 // Room struct defineds content details for users room.
 // Message count is used to track amount of messages sent by users in room,
 // this helps with partitioning messages on retrieval, messages are retrieved in 20s on request.
+// FirstLoad is specified if user initially wants to retrieve room messages from frontend.
 type Room struct {
-	RoomID          string    `bson:"_id" json:"email"`
-	RoomName        string    `bson:"roomName" json:"roomName"`
-	RegisteredUsers []string  `bson:"registeredUsers" json:"registeredUsers"`
-	MessageCount    int       `bson:"messageCount" json:"-"`
-	Messages        []Message `bson:"-" json:"messages"`
+	RoomID          string    `bson:"_id" json:"roomID,omitempty"`
+	RoomName        string    `bson:"roomName" json:"roomName,omitempty"`
+	RegisteredUsers []string  `bson:"registeredUsers" json:"registeredUsers,omitempty"`
+	MessageCount    int       `bson:"messageCount" json:"messageCount,omitempty"`
+	Messages        []Message `bson:"-" json:"messages,omitempty"`
+	FirstLoad       bool      `bson:"-" json:"firstLoad,omitempty"`
 }
 
 // Message struct defines user message contents, size and hash is defined if user is sending files.

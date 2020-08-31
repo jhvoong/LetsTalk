@@ -269,8 +269,8 @@ func (b Message) saveMessageContent() ([]string, error) {
 // It is assumed the client has load messages from index >=30 and want to fetch messages from index 10 to 20.
 // If index is a zero, the last 20 messages are retrieved.
 func (b *Room) getPartitionedMessageInRoom() error {
-	if b.MessageCount == 0 {
-		opts := options.FindOne().SetProjection(bson.M{"roomID": 0, "roomName": 0, "registeredUsers": 0})
+	if b.FirstLoad {
+		opts := options.FindOne().SetProjection(bson.M{"roomID": 0, "roomName": 0})
 
 		messsageCountResult := db.Collection(values.RoomsCollectionName).
 			FindOne(ctx, bson.M{"_id": b.RoomID}, opts)
@@ -282,6 +282,7 @@ func (b *Room) getPartitionedMessageInRoom() error {
 		}
 
 		b.MessageCount = room.MessageCount
+		b.RegisteredUsers = room.RegisteredUsers
 	}
 
 	var messages []Message
@@ -293,7 +294,7 @@ func (b *Room) getPartitionedMessageInRoom() error {
 		return err
 	}
 
-	if err := result.Decode(&messages); err != nil {
+	if err := result.All(ctx, &messages); err != nil {
 		return err
 	}
 

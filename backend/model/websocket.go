@@ -178,7 +178,8 @@ func (s Subscription) ReadPump(user string) {
 		}
 
 		if data.User != user {
-			log.Warningf("an invalidated user tried to make websocket requests, invalidated user: %s, user: %s", data.User, user)
+			log.Warningf("an invalidated user tried to make websocket request for %s, invalidated user: %s, user: %s", data.MsgType, data.User, user)
+			continue
 		}
 
 		switch data.MsgType {

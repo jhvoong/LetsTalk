@@ -13,8 +13,8 @@
         "CertPath": "cert.pem",
         "KeyPath": "key.pem"
     },
-    "DbHost": "mongodb+srv://admin:admin@cluster0-huyp5.mongodb.net/test?retryWrites=true&w=majority",
-    "DbName": "unilagDatabase",
+    "DbHost": "mongodb://localhost:27017",
+    "DbName": "LetsTalkDB",
     "DropboxToken": "",
     "EnableClassSessionRecord": true,
     "Port": "8080"

@@ -430,12 +430,12 @@ func (msg messageBytes) handleRequestMessages(user string) {
 		return
 	}
 
-	data := map[string]interface{}{
-		"msgType":   "RequestAllMessages",
-		"messages":  room.Messages,
-		"roomName":  room.RoomName,
-		"roomID":    room.RoomID,
-		"roomUsers": room.RegisteredUsers,
+	data := struct {
+		MsgType     string `json:"msgType"`
+		RoomContent Room   `json:"roomPageDetails"`
+	}{
+		values.RequestMessages,
+		room,
 	}
 
 	jsonContent, err := json.Marshal(&data)
@@ -452,7 +452,7 @@ func (msg messageBytes) handleRequestMessages(user string) {
 func handleLoadUserContent(email string) {
 	userInfo := User{Email: email}
 	if err := userInfo.getUser(); err != nil {
-		log.Println("Could not fetch users room", email)
+		log.Errorln("Could not fetch users room", email)
 		return
 	}
 

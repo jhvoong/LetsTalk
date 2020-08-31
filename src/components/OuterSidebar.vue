@@ -64,8 +64,10 @@
 <script lang="ts">
 import Vue from "vue";
 import { Prop } from "vue/types/options";
+import store from "@/store";
 
-import { JoinedRoom, RecentChatPreview } from "../views/Types";
+import { JoinedRoom, RecentChatPreview, RoomPageDetails } from "../views/Types";
+import { MessageType } from "../views/Constants";
 
 export default Vue.extend({
   name: "OuterSidebar",
@@ -74,12 +76,26 @@ export default Vue.extend({
     joinedRooms: Array as Prop<JoinedRoom[]>,
     recentChatPreview: {} as Prop<RecentChatPreview>,
 
-    loadChatContent: Function,
+    sendWSMessage: Function,
   },
 
-  data: () => ({}),
+  data: () => ({
+    userID: store.state.email,
+  }),
 
-  methods: {},
+  methods: {
+    loadChatContent: function (roomID: string) {
+      console.log(roomID);
+      const message = {
+        msgType: MessageType.RequestMessages,
+        userID: this.userID,
+        roomID: roomID,
+        firstLoad: true,
+      };
+
+      this.sendWSMessage(JSON.stringify(message));
+    },
+  },
 });
 </script>
 

@@ -21,8 +21,12 @@ export interface NewRoomRequest extends RoomDetails {
 }
 
 export interface RoomPageDetails {
-    roomDetails: RoomDetails;
-    usersOnline: UsersOnline;
+    roomID: string;
+    roomName: string;
+
+    firstLoad: boolean;
+
+    registeredUsers: string[];
     messages: Messages[];
 }
 
@@ -31,11 +35,15 @@ export interface UsersIcon {
 }
 
 export interface UsersOnline {
-    [index: number]: boolean;
+    [index: string]: boolean;
 }
 
 export interface Messages {
-    dateSent: string;
-    name: string;
+    time: string;
+    type: string; // Type denotes the message type, if INFO, FILE or MESSAGE type.
+    userName: string;
+    userID: string;
     message: string;
+
+    index: Int16Array;
 }
