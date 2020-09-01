@@ -70,7 +70,7 @@
         </v-card>
       </v-row>
 
-      <v-row v-else>
+      <v-row v-else no-gutters>
         <v-col cols="4">
           <OuterSidebar :joinedRooms="joinedRooms" :sendWSMessage="sendWSMessage" />
         </v-col>
