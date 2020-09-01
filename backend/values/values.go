@@ -6,16 +6,16 @@ import (
 	"github.com/pion/webrtc/v2"
 )
 
-type MessageType int
-
+// Message type supported by LetsTalk
 const (
-	// Files are saved as base64 format to database then if queried,
-	TXT MessageType = iota
-	INFO
-	FILE
+	MessageTypeFile             = "File"
+	MessageTypeMessage          = "Message"
+	MessageTypeInfo             = "Info"
+	MessageTypeClassSession     = "ClassSession"
+	MessageTypeClassSessionLink = "MessageTypeClassSessionLink"
 )
 
-// All request message types both clients and server
+// All websocket message types both clients and server
 const (
 	UnauthorizedAcces             = "UnauthorizedAccess"
 	NewFileUploadMsgType          = "NewFileUpload"
@@ -23,10 +23,10 @@ const (
 	RequestMessages               = "RequestMessages"
 	SearchUserMsgType             = "SearchUser"
 	WebsocketOpenMsgType          = "WebsocketOpen"
-	NewRoomCreatedMsgType         = "NewRoomCreated"
+	CreateRoomMsgType             = "CreateRoom"
 	ExitRoomMsgType               = "ExitRoom"
 	RequestUsersToJoinRoomMsgType = "RequestUsersToJoinRoom"
-	UserJoinedRoomMsgType         = "UserJoinedRoom"
+	JoinRoomMsgType               = "JoinRoom"
 
 	UploadFileErrorMsgType   = "UploadFileError" // UploadFileErrorMsgType is sent to client only.
 	UploadFileSuccessMsgType = "FileUploadSuccess"

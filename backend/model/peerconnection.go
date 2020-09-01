@@ -121,8 +121,8 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 					Name:        sdp.AuthorName,
 					Message:     link,
 					UserID:      sdp.UserID,
-					Type:        "classSessionLink",
-					MessageType: "ClassSessionLink",
+					Type:        values.MessageTypeClassSessionLink,
+					MessageType: values.MessageTypeClassSessionLink,
 					Hash:        sdp.ClassSessionID,
 				}
 
@@ -278,7 +278,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 	}
 
 	// Broadcast class session to room.
-	sdp.MsgType = "ClassSession"
+	sdp.MsgType = values.MessageTypeClassSession
 	sdp.AuthorName = values.MapEmailToName[sdp.UserID]
 
 	jsonContent, err := json.Marshal(sdp)
@@ -294,7 +294,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 		RoomID: sdp.RoomID,
 		Name:   sdp.AuthorName,
 		UserID: sdp.UserID,
-		Type:   "classSession",
+		Type:   values.MessageTypeClassSession,
 		Hash:   sdp.ClassSessionID,
 	}.saveMessageContent()
 

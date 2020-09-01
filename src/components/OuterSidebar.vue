@@ -22,7 +22,7 @@
       </v-col>
     </v-row>
 
-    <v-container style=" height: 72vh;" class="overflow-y-auto" cols="12">
+    <v-container style="max-height: 72vh;" class="overflow-y-auto" cols="12">
       <v-list nav tile dense three-line>
         <v-list-item-group mandatory>
           <v-list-item
@@ -33,7 +33,7 @@
             <v-list-item-avatar>
               <v-badge bordered bottom color="deep-purple accent-4" dot offset-x="10" offset-y="10">
                 <v-avatar size="30">
-                  <v-img :src="joinedRoom.icon?joinedRoom.icon:require('../assets/unilag.svg')"></v-img>
+                  <v-img :src="joinedRoom.roomIcon?joinedRoom.icon:require('../assets/unilag.svg')"></v-img>
                 </v-avatar>
               </v-badge>
             </v-list-item-avatar>
@@ -66,8 +66,8 @@ import Vue from "vue";
 import { Prop } from "vue/types/options";
 import store from "@/store";
 
-import { JoinedRoom, RecentChatPreview, RoomPageDetails } from "../views/Types";
-import { MessageType } from "../views/Constants";
+import { JoinedRoom, RecentChatPreview } from "../views/Types";
+import { WSMessageType } from "../views/Constants";
 
 export default Vue.extend({
   name: "OuterSidebar",
@@ -85,9 +85,8 @@ export default Vue.extend({
 
   methods: {
     loadChatContent: function (roomID: string) {
-      console.log(roomID);
       const message = {
-        msgType: MessageType.RequestMessages,
+        msgType: WSMessageType.RequestMessages,
         userID: this.userID,
         roomID: roomID,
         firstLoad: true,

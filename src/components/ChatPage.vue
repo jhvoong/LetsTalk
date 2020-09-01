@@ -4,12 +4,12 @@
       <v-app-bar tile flat height="100%" width="100%">
         <v-app-bar-nav-icon class="mx-5">
           <v-avatar>
-            <v-img src="../assets/unilag.svg"></v-img>
+            <v-img :src="currentViewedRoom.roomIcon"></v-img>
           </v-avatar>
         </v-app-bar-nav-icon>
 
         <v-toolbar-title>
-          <b>Room SEES2020</b>
+          <b>{{currentViewedRoom.roomName}}</b>
         </v-toolbar-title>
 
         <v-spacer></v-spacer>
@@ -30,29 +30,69 @@
       <v-container class="overflow-y-auto scroll-behavior-smooth" style="height: 78vh;" fluid>
         <v-row>
           <v-col cols="12" v-for="(message,index) in currentViewedRoom.messages" :key="index">
-            <v-row v-if="message.userID===userID">
-              <div align="right">
-                <v-card flat :color="vuetify.framework.theme.dark?'#778899':'#bbeaff'" width="60%">
-                  <v-card-text align="left">{{message.message}}</v-card-text>
+            <v-template v-if="message.type==messageType.Message">
+              <v-row v-if="message.userID===userID">
+                <div align="right">
+                  <v-card
+                    flat
+                    :color="vuetify.framework.theme.dark?'#778899':'#bbeaff'"
+                    width="60%"
+                  >
+                    <v-card-text align="left">{{message.message}}</v-card-text>
 
+                    <v-card-subtitle align="right" class="ml-auto">
+                      <b>{{message.userID}} {{message.time}}</b>
+                    </v-card-subtitle>
+                  </v-card>
+                </div>
+              </v-row>
+
+              <v-row v-else>
+                <v-avatar style="align-self: flex-end;" rounded>
+                  <v-img height="50px" width="50px" contain :src="require('../assets/unilag.svg')"></v-img>
+                </v-avatar>
+                <v-card flat :color="vuetify.framework.theme.dark?'':'#DCDCDC'" width="70%">
+                  <v-card-text>{{message.message}}</v-card-text>
                   <v-card-subtitle align="right" class="ml-auto">
                     <b>{{message.userID}} {{message.time}}</b>
                   </v-card-subtitle>
                 </v-card>
-              </div>
-            </v-row>
+              </v-row>
+            </v-template>
 
-            <v-row v-else>
-              <v-avatar style="align-self: flex-end;" rounded>
-                <v-img height="50px" width="50px" contain :src="require('../assets/unilag.svg')"></v-img>
-              </v-avatar>
-              <v-card flat :color="vuetify.framework.theme.dark?'':'#DCDCDC'" width="70%">
-                <v-card-text>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</v-card-text>
-                <v-card-subtitle align="right" class="ml-auto">
-                  <b>Name Here 10-11-2020</b>
-                </v-card-subtitle>
-              </v-card>
-            </v-row>
+            <v-template v-else>
+              <v-col v-if="messageType.File" cols="12">
+                <div align="center">
+                  <v-chip href="https://github.com/metaclips">
+                    <b>{{message.message}} sent by {{message.name}}. Click to download.</b>
+                  </v-chip>
+                </div>
+              </v-col>
+
+              <v-col v-if="messageType.Info" cols="12">
+                <div align="center">
+                  <v-chip href="https://github.com/metaclips">
+                    <b>{{message.message}}.</b>
+                  </v-chip>
+                </div>
+              </v-col>
+
+              <v-col v-if="messageType.ClassSessionLink" cols="12">
+                <div align="center">
+                  <v-chip href="https://github.com/metaclips">
+                    <b>Class session started by {{message.name}}. Click to join.</b>
+                  </v-chip>
+                </div>
+              </v-col>
+
+              <v-col v-if="messageType.ClassSession" cols="12">
+                <div align="center">
+                  <v-chip href="https://github.com/metaclips">
+                    <b>Class session recording by {{message.name}}. Click to download.</b>
+                  </v-chip>
+                </div>
+              </v-col>
+            </v-template>
           </v-col>
         </v-row>
       </v-container>
@@ -85,7 +125,7 @@ import { Prop } from "vue/types/options";
 import store from "@/store";
 
 import { RoomPageDetails } from "../views/Types";
-import { MessageType } from "../views/Constants";
+import { WSMessageType, MessageType } from "../views/Constants";
 
 export default Vue.extend({
   name: "ChatPage",
@@ -99,6 +139,9 @@ export default Vue.extend({
   data: () => ({
     vuetify: vuetify,
     messageContent: "",
+    newRoomName: "",
+
+    messageType: MessageType,
 
     userID: store.state.email,
   }),
@@ -108,10 +151,10 @@ export default Vue.extend({
       if (!this.messageContent.match(/\S/)) return;
 
       const message = {
-        msgType: "NewMessage",
+        msgType: WSMessageType.NewMessage,
         message: this.messageContent,
         userID: this.userID,
-        type: "txt",
+        type: this.messageType.Message,
       };
 
       this.sendWSMessage(JSON.stringify(message));
@@ -119,9 +162,8 @@ export default Vue.extend({
     },
 
     loadMoreMessages: function () {
-      this.messageContent.length;
       const message = {
-        msgType: MessageType.RequestMessages,
+        msgType: WSMessageType.RequestMessages,
         roomID: this.currentViewedRoom.roomID,
         messageCount: this.currentViewedRoom.messages[
           this.currentViewedRoom.messages.length - 1

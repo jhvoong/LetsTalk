@@ -38,10 +38,16 @@ var HubConstruct = Hub{
 
 func (h *Hub) Run() {
 	Upgrader.CheckOrigin = func(r *http.Request) bool {
-		// ToDo: save host in config.json or .env
 		host := r.Header.Get("Origin")
-		if host == "https://127.0.0.1:8081" && r.TLS != nil && r.TLS.HandshakeComplete {
-			return true
+
+		if r.TLS != nil && r.TLS.HandshakeComplete {
+			for _, allowdOrigin := range values.Config.CorsAllowedOrigins {
+				if host == allowdOrigin {
+					return true
+				}
+			}
+
+			return false
 		}
 
 		return false
@@ -191,17 +197,20 @@ func (s Subscription) ReadPump(user string) {
 		case values.RequestMessages:
 			msg.handleRequestMessages(user)
 
-		case values.NewRoomCreatedMsgType:
+		case values.NewMessageMsgType:
+			msg.handleNewMessage(user)
+
+		case values.CreateRoomMsgType:
 			msg.handleCreateNewRoom()
+
+		case values.JoinRoomMsgType:
+			msg.handleUserAcceptRoomRequest()
 
 		case values.ExitRoomMsgType:
 			msg.handleExitRoom(user)
 
 		case values.RequestUsersToJoinRoomMsgType:
 			msg.handleRequestUserToJoinRoom()
-
-		case values.UserJoinedRoomMsgType:
-			msg.handleUserAcceptRoomRequest(user)
 
 		case values.NewFileUploadMsgType:
 			msg.handleNewFileUpload()
@@ -226,9 +235,6 @@ func (s Subscription) ReadPump(user string) {
 
 		case values.NegotiateSDP:
 			sdpConstruct{}.acceptRenegotiation(msg)
-
-		case values.NewMessageMsgType:
-			msg.handleNewMessage(user)
 
 		case values.SearchUserMsgType:
 			handleSearchUser(data.SearchText, user)

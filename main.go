@@ -44,9 +44,8 @@ func main() {
 	log.Infoln("Webserver UP")
 
 	handler := cors.New(cors.Options{
-		Debug: true,
-		// ToDo: specify this in config.json file
-		AllowedOrigins: []string{"https://127.0.0.1:8081", "https://192.168.1.101:8081", "https://192.168.43.140:8081"},
+		Debug:          true,
+		AllowedOrigins: values.Config.CorsAllowedOrigins,
 	}).Handler(router)
 
 	// Optional use of TLS due to Heroku serving TLS at low level.

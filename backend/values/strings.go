@@ -10,5 +10,5 @@ const (
 
 	AdminCookieName = "Admin"
 	UserCookieName  = "User"
-	TimeLayout      = "Monday, 02-Jan-06 15:04:05"
+	TimeLayout      = "Monday, 02-Jan-06"
 )

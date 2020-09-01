@@ -28,7 +28,7 @@ type CookieData struct {
 }
 
 type User struct {
-	Email string `bson:"_id" json:"email"`
+	Email string `bson:"_id" json:"userID"`
 	Name  string `bson:"name" json:"name"`
 	DOB   string `bson:"age" json:"age"`
 	Class string `bson:"class" json:"class"`
@@ -51,7 +51,7 @@ type JoinRequest struct {
 	RoomName           string   `bson:"roomName" json:"roomName"`
 	RequestingUserName string   `bson:"requestingUserName" json:"requestingUserName"`
 	RequestingUserID   string   `bson:"requestingUserID" json:"requestingUserID"`
-	Users              []string `bson:"-" json:"users"` // Users whom requests are to be sent to.
+	Users              []string `bson:"-" json:"users"` // Users whom join requests are to be sent to, if client wants to send request to multiple users.
 }
 
 // Room struct defineds content details for users room.
@@ -61,6 +61,7 @@ type JoinRequest struct {
 type Room struct {
 	RoomID          string    `bson:"_id" json:"roomID,omitempty"`
 	RoomName        string    `bson:"roomName" json:"roomName,omitempty"`
+	RoomIcon        string    `bson:"roomIcon" json:"roomIcon"`
 	RegisteredUsers []string  `bson:"registeredUsers" json:"registeredUsers,omitempty"`
 	MessageCount    int       `bson:"messageCount" json:"messageCount,omitempty"`
 	Messages        []Message `bson:"-" json:"messages,omitempty"`
@@ -86,13 +87,13 @@ type Message struct {
 type Joined struct {
 	RoomID      string `json:"roomID"`
 	RoomName    string `json:"roomName"`
-	Email       string `json:"email"`
+	Email       string `json:"userID"`
 	Joined      bool   `json:"joined"`
 	MessageType string `bson:"-" json:"msgType"`
 }
 
 type NewRoomRequest struct {
-	Email       string `json:"email"`
+	Email       string `json:"userID"`
 	RoomName    string `json:"roomName"`
 	MessageType string `bson:"-" json:"msgType"`
 }

@@ -18,6 +18,8 @@ type configuration struct {
 		AuthSecret string
 	}
 
+	CorsAllowedOrigins []string
+
 	DbHost                   string
 	DbName                   string
 	DropboxToken             string

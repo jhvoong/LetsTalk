@@ -20,13 +20,13 @@ type messageBytes []byte
 func (msg messageBytes) handleCreateNewRoom() {
 	var newRoom NewRoomRequest
 	if err := json.Unmarshal(msg, &newRoom); err != nil {
-		log.Println("Could not convert to required New Room Request struct")
+		log.Errorln("could not convert to required New Room Request struct")
 		return
 	}
 
 	roomID, err := newRoom.createNewRoom()
 	if err != nil {
-		log.Println("Unable to create a new room for user:", newRoom.Email, "err:", err.Error())
+		log.Errorln("unable to create a new room for user:", newRoom.Email, "err:", err.Error())
 		return
 	}
 
@@ -35,12 +35,12 @@ func (msg messageBytes) handleCreateNewRoom() {
 		RoomID:      roomID,
 		Email:       newRoom.Email,
 		RoomName:    newRoom.RoomName,
-		MessageType: "UserJoinedRoom",
+		MessageType: values.JoinRoomMsgType,
 	}
 
 	jsonContent, err := json.Marshal(userJoinedMessage)
 	if err != nil {
-		log.Println("Could not marshal to jsonByte while creating room", err.Error())
+		log.Errorln("could not marshal to jsonByte while creating room", err.Error())
 		return
 	}
 
@@ -89,14 +89,10 @@ func (msg messageBytes) handleRequestUserToJoinRoom() {
 }
 
 // handleUserAcceptRoomRequest accepts room join request.
-func (msg messageBytes) handleUserAcceptRoomRequest(joiner string) {
+func (msg messageBytes) handleUserAcceptRoomRequest() {
 	var roomRequest Joined
 	if err := json.Unmarshal(msg, &roomRequest); err != nil {
 		log.Println("Could not convert to required Join Room Request struct")
-		return
-	}
-
-	if roomRequest.Email != joiner {
 		return
 	}
 
@@ -115,7 +111,7 @@ func (msg messageBytes) handleUserAcceptRoomRequest(joiner string) {
 func (msg messageBytes) handleNewMessage(author string) {
 	var newMessage Message
 	if err := json.Unmarshal(msg, &newMessage); err != nil {
-		log.Println("Could not convert to required New Message struct", err)
+		log.Errorln("could not convert to required New Message struct", err)
 		return
 	}
 
@@ -237,8 +233,7 @@ func (msg messageBytes) handleUploadFileChunk() {
 	}{}
 
 	if err := json.Unmarshal(msg, &data); err != nil {
-		fmt.Println(string(msg))
-		log.Println(err)
+		log.Errorln("error unmarshalling file in handle upload chunk, err:", err)
 		return
 	}
 
@@ -325,7 +320,7 @@ func (msg messageBytes) handleUploadFileUploadComplete() {
 		Name:    data.UserName,
 		Message: data.FileName,
 		Time:    time.Now().Format(values.TimeLayout),
-		Type:    "file",
+		Type:    values.MessageTypeFile,
 		Size:    data.FileSize,
 		Hash:    data.FileHash,
 	}.saveMessageContent()

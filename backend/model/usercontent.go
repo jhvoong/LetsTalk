@@ -54,7 +54,7 @@ func (b User) addUserToRoom(roomID, roomName string) error {
 	var chats Room
 	message := Message{
 		Message: b.Email + " Joined",
-		Type:    getContentType(values.INFO),
+		Type:    values.MessageTypeInfo,
 	}
 
 	result := db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{
@@ -174,7 +174,7 @@ func (b User) exitRoom(roomID string) ([]string, error) {
 	}
 
 	exitMessage := Message{
-		Type:    getContentType(values.INFO),
+		Type:    values.MessageTypeInfo,
 		Message: b.Email + " left the room",
 	}
 	room.Messages = append(room.Messages, exitMessage)
@@ -240,11 +240,13 @@ func (b Message) saveMessageContent() ([]string, error) {
 		SetReturnDocument(options.After)
 
 	result := db.Collection(values.RoomsCollectionName).
-		FindOneAndUpdate(ctx, bson.M{"_id": b.RoomID}, opts)
+		FindOneAndUpdate(ctx, bson.M{"_id": b.RoomID}, bson.M{"$inc": "messageCount"}, opts)
 
 	if err := result.Decode(&roomDetails); err != nil {
 		return nil, err
 	}
+
+	b.Index = roomDetails.MessageCount
 
 	var userExists bool
 	for _, user := range roomDetails.RegisteredUsers {
@@ -270,19 +272,12 @@ func (b Message) saveMessageContent() ([]string, error) {
 // If index is a zero, the last 20 messages are retrieved.
 func (b *Room) getPartitionedMessageInRoom() error {
 	if b.FirstLoad {
-		opts := options.FindOne().SetProjection(bson.M{"roomID": 0, "roomName": 0})
-
 		messsageCountResult := db.Collection(values.RoomsCollectionName).
-			FindOne(ctx, bson.M{"_id": b.RoomID}, opts)
+			FindOne(ctx, bson.M{"_id": b.RoomID})
 
-		var room Room
-
-		if err := messsageCountResult.Decode(&room); err != nil {
+		if err := messsageCountResult.Decode(&b); err != nil {
 			return err
 		}
-
-		b.MessageCount = room.MessageCount
-		b.RegisteredUsers = room.RegisteredUsers
 	}
 
 	var messages []Message
@@ -306,7 +301,7 @@ func (b NewRoomRequest) createNewRoom() (string, error) {
 	var chats Room
 	message := Message{
 		Message: b.Email + " Joined",
-		Type:    getContentType(values.INFO),
+		Type:    values.MessageTypeInfo,
 	}
 
 	chats.Messages = append(chats.Messages, message)
@@ -326,6 +321,7 @@ func (b NewRoomRequest) createNewRoom() (string, error) {
 	return chats.RoomID, nil
 }
 
+// acceptRoomRequest accept room join request from a requesting user.
 func (b Joined) acceptRoomRequest() ([]string, error) {
 	result := db.Collection(values.UsersCollectionName).FindOne(ctx, bson.M{
 		"_id": b.Email,
@@ -351,12 +347,19 @@ func (b Joined) acceptRoomRequest() ([]string, error) {
 		return nil, values.ErrIllicitJoinRequest
 	}
 
-	user.RoomsJoined = append(user.RoomsJoined, RoomsJoined{RoomID: b.RoomID, RoomName: b.RoomName})
+	if b.Joined {
+		user.RoomsJoined = append(user.RoomsJoined, RoomsJoined{RoomID: b.RoomID, RoomName: b.RoomName})
+	}
 
 	_, err = db.Collection(values.UsersCollectionName).UpdateOne(ctx, bson.M{"_id": b.Email},
 		bson.M{"$set": bson.M{"joinRequest": user.JoinRequest, "roomsJoined": user.RoomsJoined}})
 	if err != nil {
 		return nil, err
+	}
+
+	// Room request is declined.
+	if !b.Joined {
+		return nil, nil
 	}
 
 	result = db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{
@@ -370,7 +373,7 @@ func (b Joined) acceptRoomRequest() ([]string, error) {
 
 	message := Message{
 		Message: b.Email + " Joined",
-		Type:    getContentType(values.INFO),
+		Type:    values.MessageTypeInfo,
 	}
 
 	messages.RegisteredUsers = append(messages.RegisteredUsers, b.Email)
@@ -435,7 +438,7 @@ func (b JoinRequest) requestUserToJoinRoom(userToJoinEmail string) ([]string, er
 
 	message := Message{
 		Message: fmt.Sprintf("%s was requested to join the room by %s", userToJoinEmail, b.RequestingUserID),
-		Type:    getContentType(values.INFO),
+		Type:    values.MessageTypeInfo,
 	}
 
 	room.Messages = append(room.Messages, message)
@@ -524,19 +527,6 @@ func uploadFileGridFS(fileName string) error {
 	}
 
 	return nil
-}
-
-func getContentType(contentType values.MessageType) string {
-	switch contentType {
-	case values.INFO:
-		return "info"
-	case values.TXT:
-		return "txt"
-	case values.FILE:
-		return "file"
-	}
-
-	return ""
 }
 
 func GetUser(key string, user string) (names []string) {

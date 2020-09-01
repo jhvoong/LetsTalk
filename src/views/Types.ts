@@ -4,7 +4,12 @@ export interface RoomDetails {
 }
 
 export interface JoinedRoom extends RoomDetails {
-    icon: string;
+    roomIcon: string;
+}
+
+export interface JoinRequest extends RoomDetails {
+    requestingUserName: string;
+    requestingUserID: string;
 }
 
 export interface RecentChatPreviewType extends RoomDetails {
@@ -23,6 +28,7 @@ export interface NewRoomRequest extends RoomDetails {
 export interface RoomPageDetails {
     roomID: string;
     roomName: string;
+    roomIcon: string;
 
     firstLoad: boolean;
 
@@ -41,7 +47,7 @@ export interface UsersOnline {
 export interface Messages {
     time: string;
     type: string; // Type denotes the message type, if INFO, FILE or MESSAGE type.
-    userName: string;
+    name: string;
     userID: string;
     message: string;
 
