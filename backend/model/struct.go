@@ -43,7 +43,6 @@ type User struct {
 type RoomsJoined struct {
 	RoomID   string `bson:"roomID" json:"roomID"`
 	RoomName string `bson:"roomName" json:"roomName"`
-	Icon     string `bson:"icon" json:"icon"`
 }
 
 type JoinRequest struct {

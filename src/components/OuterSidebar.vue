@@ -18,7 +18,9 @@
       </v-col>
 
       <v-col cols="12">
-        <h2>Discussions</h2>
+        <v-subheader>
+          <b>Discussions</b>
+        </v-subheader>
       </v-col>
     </v-row>
 
@@ -28,7 +30,7 @@
           <v-list-item
             v-for="(joinedRoom,index) in joinedRooms"
             :key="index"
-            @click="loadChatContent(joinedRoom.roomID)"
+            @click="loadChatContent(joinedRoom.roomID, index)"
           >
             <v-list-item-avatar>
               <v-badge bordered bottom color="deep-purple accent-4" dot offset-x="10" offset-y="10">
@@ -77,6 +79,7 @@ export default Vue.extend({
     recentChatPreview: {} as Prop<RecentChatPreview>,
 
     sendWSMessage: Function,
+    changeViewedRoomIndex: Function,
   },
 
   data: () => ({
@@ -84,7 +87,7 @@ export default Vue.extend({
   }),
 
   methods: {
-    loadChatContent: function (roomID: string) {
+    loadChatContent: function (roomID: string, index: number) {
       const message = {
         msgType: WSMessageType.RequestMessages,
         userID: this.userID,
@@ -93,6 +96,7 @@ export default Vue.extend({
       };
 
       this.sendWSMessage(JSON.stringify(message));
+      this.changeViewedRoomIndex(index);
     },
   },
 });

@@ -33,7 +33,18 @@ export interface RoomPageDetails {
     firstLoad: boolean;
 
     registeredUsers: string[];
-    messages: Messages[];
+    messages: Message[];
+}
+
+export interface Message {
+    time: string;
+    type: string; // Type denotes the message type, if INFO, FILE or MESSAGE type.
+    name: string;
+    userID: string;
+    roomID: string;
+    message: string;
+
+    index: Int16Array;
 }
 
 export interface UsersIcon {
@@ -42,14 +53,4 @@ export interface UsersIcon {
 
 export interface UsersOnline {
     [index: string]: boolean;
-}
-
-export interface Messages {
-    time: string;
-    type: string; // Type denotes the message type, if INFO, FILE or MESSAGE type.
-    name: string;
-    userID: string;
-    message: string;
-
-    index: Int16Array;
 }

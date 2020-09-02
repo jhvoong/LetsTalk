@@ -198,7 +198,7 @@ func (s Subscription) ReadPump(user string) {
 			msg.handleRequestMessages(user)
 
 		case values.NewMessageMsgType:
-			msg.handleNewMessage(user)
+			msg.handleNewMessage()
 
 		case values.CreateRoomMsgType:
 			msg.handleCreateNewRoom()

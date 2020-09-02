@@ -72,7 +72,11 @@
 
       <v-row v-else no-gutters>
         <v-col cols="4">
-          <OuterSidebar :joinedRooms="joinedRooms" :sendWSMessage="sendWSMessage" />
+          <OuterSidebar
+            :changeViewedRoomIndex="changeViewedRoomIndex"
+            :joinedRooms="joinedRooms"
+            :sendWSMessage="sendWSMessage"
+          />
         </v-col>
 
         <v-col cols="8">
@@ -99,7 +103,7 @@ import { WSMessageType } from "./Constants";
 import InnerSidebar from "../components/InnerSidebar.vue";
 import OuterSidebar from "../components/OuterSidebar.vue";
 import ChatPage from "../components/ChatPage.vue";
-import { JoinedRoom, RoomPageDetails, Messages, JoinRequest } from "./Types";
+import { JoinedRoom, RoomPageDetails, Message, JoinRequest } from "./Types";
 
 export default Vue.extend({
   name: "Home",
@@ -120,6 +124,8 @@ export default Vue.extend({
     showAddRoomDialog: false,
     showNotificationDialog: false,
     showChatPage: false,
+
+    indexOfCurrentViewedRoom: 0,
   }),
 
   methods: {
@@ -135,12 +141,31 @@ export default Vue.extend({
           this.currentViewedRoom.roomIcon = require("../assets/unilag.svg");
         }
 
+        console.log(this.joinedRooms.length, this.indexOfCurrentViewedRoom);
+        this.joinedRooms[
+          this.indexOfCurrentViewedRoom
+        ].roomIcon = this.currentViewedRoom.roomIcon;
         return;
       }
 
-      roomDetails.messages.map((messages: Messages) => {
-        this.currentViewedRoom.messages.unshift(messages);
+      roomDetails.messages.map((message: Message) => {
+        this.currentViewedRoom.messages.unshift(message);
       });
+    },
+
+    onJoinRoom: function (joinedRoom: JoinedRoom) {
+      this.joinedRooms.unshift(joinedRoom);
+    },
+
+    onNewMessage: function (message: Message) {
+      if (this.currentViewedRoom.roomID === message.roomID) {
+        this.currentViewedRoom.messages.push(message);
+        return;
+      }
+    },
+
+    changeViewedRoomIndex: function (index: number) {
+      this.indexOfCurrentViewedRoom = index;
     },
 
     joinRoom: function (roomID: string, roomName: string, index: number) {
@@ -207,6 +232,33 @@ export default Vue.extend({
       "wss://" + URLs[1] + "/ws?token=" + store.state.token
     );
 
+    socket.onmessage = (event: MessageEvent) => {
+      const jsonContent = JSON.parse(event.data);
+
+      switch (jsonContent.msgType) {
+        case WSMessageType.UnauthorizedAccess:
+          this.onUnAuthorizedAccess();
+          break;
+
+        case WSMessageType.WebsocketOpen:
+          this.joinedRooms = jsonContent.joinedRooms;
+          break;
+
+        case WSMessageType.RequestMessages:
+          this.showChatPage = true;
+          console.log(jsonContent.roomPageDetails);
+          this.onRequestMessages(jsonContent.roomPageDetails);
+          break;
+
+        case WSMessageType.JoinRoom:
+          this.onJoinRoom(jsonContent);
+          break;
+
+        case WSMessageType.NewMessage:
+          break;
+      }
+    };
+
     socket.onerror = (event: Event) => {
       // Reconnect Websocket if not UnAuthorized.
       console.log("Websocket errored.", event);
@@ -228,33 +280,6 @@ export default Vue.extend({
     socket.onclose = function (closeEvent: CloseEvent) {
       // ToDo: We can create a dialog and ask users if they want to reconnect.
       console.log("Websocket closed.", closeEvent);
-    };
-
-    socket.onmessage = (event: MessageEvent) => {
-      const jsonContent = JSON.parse(event.data);
-
-      switch (jsonContent.msgType) {
-        case WSMessageType.UnauthorizedAccess:
-          this.onUnAuthorizedAccess();
-          break;
-
-        case WSMessageType.WebsocketOpen:
-          this.joinedRooms = jsonContent.joinedRooms;
-          break;
-
-        case WSMessageType.RequestMessages:
-          this.showChatPage = true;
-          this.onRequestMessages(jsonContent.roomPageDetails);
-          break;
-
-        case WSMessageType.JoinRoom:
-          this.joinedRooms.unshift({
-            roomID: jsonContent.roomID,
-            roomIcon: "",
-            roomName: jsonContent.roomName,
-          });
-          break;
-      }
     };
   },
 });

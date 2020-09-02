@@ -165,6 +165,7 @@ export default Vue.extend({
       const message = {
         msgType: WSMessageType.RequestMessages,
         roomID: this.currentViewedRoom.roomID,
+
         messageCount: this.currentViewedRoom.messages[
           this.currentViewedRoom.messages.length - 1
         ].index,

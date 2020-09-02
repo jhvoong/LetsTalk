@@ -107,16 +107,47 @@ func (msg messageBytes) handleUserAcceptRoomRequest() {
 	}
 }
 
-// handleNewMessage broadcasts users message to all online users and also saves to database.
-func (msg messageBytes) handleNewMessage(author string) {
-	var newMessage Message
-	if err := json.Unmarshal(msg, &newMessage); err != nil {
-		log.Errorln("could not convert to required New Message struct", err)
+// handleRequestAllMessages fetches messages given the specified message room ID.
+func (msg messageBytes) handleRequestMessages(user string) {
+	room := Room{}
+	if err := json.Unmarshal(msg, &room); err != nil {
+		log.Errorln("could not unmarshall file on handle request partitioned message, err:", err)
 		return
 	}
 
-	// Do not send if registered WS user is not same as message sender.
-	if author != newMessage.UserID {
+	if err := room.getPartitionedMessageInRoom(); err != nil {
+		log.Errorln("could not get all messages in room, err:", err)
+		return
+	}
+
+	// Strip off unnecessary message information sent to server.
+	for index := range room.Messages {
+		room.Messages[index].RoomID = ""
+	}
+	room.RoomIcon = ""
+
+	data := struct {
+		MsgType     string `json:"msgType"`
+		RoomContent Room   `json:"roomPageDetails"`
+	}{
+		values.RequestMessages,
+		room,
+	}
+
+	jsonContent, err := json.Marshal(&data)
+	if err != nil {
+		log.Errorln("could not marshal images, err:", err)
+		return
+	}
+
+	HubConstruct.sendMessage(jsonContent, user)
+}
+
+// handleNewMessage broadcasts users message to all online users and also saves to database.
+func (msg messageBytes) handleNewMessage() {
+	var newMessage Message
+	if err := json.Unmarshal(msg, &newMessage); err != nil {
+		log.Errorln("could not convert to required New Message struct", err)
 		return
 	}
 
@@ -124,7 +155,7 @@ func (msg messageBytes) handleNewMessage(author string) {
 	// Save message to database ensuring user is registered to room.
 	registeredUsers, err := newMessage.saveMessageContent()
 	if err != nil {
-		log.Errorln("error saving msg to db, err:", err, author)
+		log.Errorln("error saving msg to db, err:", err, "user:", newMessage.UserID)
 		return
 	}
 
@@ -406,36 +437,6 @@ func handleSearchUser(searchText, user string) {
 	jsonContent, err := json.Marshal(&data)
 	if err != nil {
 		log.Println("Error while converting search user result to json", err)
-		return
-	}
-
-	HubConstruct.sendMessage(jsonContent, user)
-}
-
-// handleRequestAllMessages fetches messages given the specified message room ID.
-func (msg messageBytes) handleRequestMessages(user string) {
-	room := Room{}
-	if err := json.Unmarshal(msg, &room); err != nil {
-		log.Errorln("could not unmarshall file on handle request partitioned message, err:", err)
-		return
-	}
-
-	if err := room.getPartitionedMessageInRoom(); err != nil {
-		log.Errorln("could not get all messages in room, err:", err)
-		return
-	}
-
-	data := struct {
-		MsgType     string `json:"msgType"`
-		RoomContent Room   `json:"roomPageDetails"`
-	}{
-		values.RequestMessages,
-		room,
-	}
-
-	jsonContent, err := json.Marshal(&data)
-	if err != nil {
-		log.Errorln("could not marshal images, err:", err)
 		return
 	}
 

@@ -267,7 +267,7 @@ func (b Message) saveMessageContent() ([]string, error) {
 
 // getPartitionedMessageInRoom retrieves messages for a particular room in the DB.
 // Retrieved messages are collected in partitions of 20s per room messages. Last message index is to
-// be sent by client so that the next recurring messages are fetched from database. If message count is say 30
+// be sent by client so that the next recurring messages are fetched from database. If total message count in DB is say 30
 // It is assumed the client has load messages from index >=30 and want to fetch messages from index 10 to 20.
 // If index is a zero, the last 20 messages are retrieved.
 func (b *Room) getPartitionedMessageInRoom() error {
@@ -299,17 +299,22 @@ func (b *Room) getPartitionedMessageInRoom() error {
 
 func (b NewRoomRequest) createNewRoom() (string, error) {
 	var chats Room
-	message := Message{
-		Message: b.Email + " Joined",
-		Type:    values.MessageTypeInfo,
-	}
 
-	chats.Messages = append(chats.Messages, message)
 	chats.RoomID = uuid.New().String()
 	chats.RoomName = b.RoomName
 	chats.RegisteredUsers = append(chats.RegisteredUsers, b.Email)
 
+	message := Message{
+		RoomID:  chats.RoomID,
+		Message: b.Email + " Joined",
+		Type:    values.MessageTypeInfo,
+	}
+
 	if _, err := db.Collection(values.RoomsCollectionName).InsertOne(ctx, chats); err != nil {
+		return "", err
+	}
+
+	if _, err := db.Collection(values.MessageCollectionName).InsertOne(ctx, message); err != nil {
 		return "", err
 	}
 
