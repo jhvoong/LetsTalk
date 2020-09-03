@@ -28,31 +28,31 @@
 
     <v-col cols="12" style="height: 75vh;">
       <v-container class="overflow-y-auto scroll-behavior-smooth" style="height: 78vh;" fluid>
-        <v-row>
+        <v-row dense>
           <v-col cols="12" v-for="(message,index) in currentViewedRoom.messages" :key="index">
             <template v-if="message.type===messageType.Message">
-              <v-row v-if="message.userID===userID">
-                <div align="right">
-                  <v-card
-                    flat
-                    :color="vuetify.framework.theme.dark?'#778899':'#bbeaff'"
-                    width="60%"
-                  >
-                    <v-card-text align="left">{{message.message}}</v-card-text>
+              <v-row dense align="end" justify="end" v-if="message.userID===userID">
+                <v-card
+                  flat
+                  :color="vuetify.framework.theme.dark?'#778899':'#bbeaff'"
+                  max-width="65%"
+                >
+                  <v-card-text class="text--wrap">
+                    <b>{{message.message}}</b>
+                  </v-card-text>
 
-                    <v-card-subtitle align="right" class="ml-auto">
-                      <b>{{message.userID}} {{message.time}}</b>
-                    </v-card-subtitle>
-                  </v-card>
-                </div>
+                  <v-card-subtitle align="right">{{message.userID}} {{message.time}}</v-card-subtitle>
+                </v-card>
               </v-row>
 
-              <v-row v-else>
+              <v-row dense v-else>
                 <v-avatar style="align-self: flex-end;" rounded>
                   <v-img height="50px" width="50px" contain :src="require('../assets/unilag.svg')"></v-img>
                 </v-avatar>
-                <v-card flat :color="vuetify.framework.theme.dark?'':'#DCDCDC'" width="70%">
-                  <v-card-text>{{message.message}}</v-card-text>
+                <v-card flat :color="vuetify.framework.theme.dark?'':'#DCDCDC'" max-width="65%">
+                  <v-card-text>
+                    <b>{{message.message}}</b>
+                  </v-card-text>
                   <v-card-subtitle align="right" class="ml-auto">
                     <b>{{message.userID}} {{message.time}}</b>
                   </v-card-subtitle>
@@ -71,7 +71,7 @@
 
               <v-col v-if="message.type===messageType.Info" cols="12">
                 <div align="center">
-                  <v-chip href="https://github.com/metaclips">
+                  <v-chip>
                     <b>{{message.message}}.</b>
                   </v-chip>
                 </div>
@@ -152,6 +152,7 @@ export default Vue.extend({
 
       const message = {
         msgType: WSMessageType.NewMessage,
+        roomID: this.currentViewedRoom.roomID,
         message: this.messageContent,
         userID: this.userID,
         type: this.messageType.Message,

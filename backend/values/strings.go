@@ -4,7 +4,7 @@ const (
 	AdminCollectionName      = "administrators"
 	UsersCollectionName      = "users"
 	RoomsCollectionName      = "rooms"
-	MessageCollectionName    = "Messages"
+	MessageCollectionName    = "messages"
 	FilesCollectionName      = "files"
 	FileChunksCollectionName = "fileChunks"
 

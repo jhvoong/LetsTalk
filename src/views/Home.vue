@@ -71,7 +71,7 @@
       </v-row>
 
       <v-row v-else no-gutters>
-        <v-col cols="4">
+        <v-col cols="3">
           <OuterSidebar
             :changeViewedRoomIndex="changeViewedRoomIndex"
             :joinedRooms="joinedRooms"
@@ -79,7 +79,7 @@
           />
         </v-col>
 
-        <v-col cols="8">
+        <v-col cols="9">
           <ChatPage
             v-if="showChatPage"
             :sendWSMessage="sendWSMessage"
@@ -169,6 +169,8 @@ export default Vue.extend({
         this.currentViewedRoom.messages.push(message);
         return;
       }
+
+      // ToDo: add notification sound and also add sidebar preview of recent message.
     },
 
     changeViewedRoomIndex: function (index: number) {
@@ -261,6 +263,7 @@ export default Vue.extend({
           break;
 
         case WSMessageType.NewMessage:
+          this.onNewMessage(jsonContent);
           break;
       }
     };

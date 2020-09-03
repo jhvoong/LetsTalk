@@ -240,7 +240,7 @@ func (b Message) saveMessageContent() ([]string, error) {
 		SetReturnDocument(options.After)
 
 	result := db.Collection(values.RoomsCollectionName).
-		FindOneAndUpdate(ctx, bson.M{"_id": b.RoomID}, bson.M{"$inc": "messageCount"}, opts)
+		FindOneAndUpdate(ctx, bson.M{"_id": b.RoomID}, bson.M{"$inc": bson.M{"messageCount": 1}}, opts)
 
 	if err := result.Decode(&roomDetails); err != nil {
 		return nil, err
@@ -260,9 +260,11 @@ func (b Message) saveMessageContent() ([]string, error) {
 		return nil, values.ErrInvalidUser
 	}
 
-	_, err := db.Collection(values.MessageCollectionName).InsertOne(ctx, b)
+	if _, err := db.Collection(values.MessageCollectionName).InsertOne(ctx, b); err != nil {
+		return nil, err
+	}
 
-	return roomDetails.RegisteredUsers, err
+	return roomDetails.RegisteredUsers, nil
 }
 
 // getPartitionedMessageInRoom retrieves messages for a particular room in the DB.
