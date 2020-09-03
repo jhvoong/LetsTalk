@@ -283,7 +283,7 @@ func (b *Room) getPartitionedMessageInRoom() error {
 	var messages []Message
 
 	result, err := db.Collection(values.MessageCollectionName).
-		Find(ctx, bson.M{"roomID": b.RoomID, "index": bson.M{"$gt": b.MessageCount - 20, "$lt": b.MessageCount}})
+		Find(ctx, bson.M{"roomID": b.RoomID, "index": bson.M{"$gt": b.MessageCount - 19, "$lt": b.MessageCount + 1}})
 
 	if err != nil {
 		return err

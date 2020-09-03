@@ -134,6 +134,12 @@ export default Vue.extend({
       socket.close();
     },
 
+    onWebsocketOpen: function (joinedRooms: JoinedRoom[]) {
+      joinedRooms.map((joinedRoom: JoinedRoom) => {
+        this.joinedRooms.unshift(joinedRoom);
+      });
+    },
+
     onRequestMessages: function (roomDetails: RoomPageDetails) {
       if (roomDetails.firstLoad) {
         this.currentViewedRoom = roomDetails;
@@ -154,6 +160,7 @@ export default Vue.extend({
     },
 
     onJoinRoom: function (joinedRoom: JoinedRoom) {
+      console.log(this.joinedRooms, this.joinedRooms.length, joinedRoom);
       this.joinedRooms.unshift(joinedRoom);
     },
 
@@ -212,7 +219,7 @@ export default Vue.extend({
     },
   },
 
-  created() {
+  mounted() {
     // Verify login, if token is specified.
     if (store.state.token == "") {
       router.push("/login");
@@ -241,12 +248,11 @@ export default Vue.extend({
           break;
 
         case WSMessageType.WebsocketOpen:
-          this.joinedRooms = jsonContent.joinedRooms;
+          this.onWebsocketOpen(jsonContent.joinedRooms);
           break;
 
         case WSMessageType.RequestMessages:
           this.showChatPage = true;
-          console.log(jsonContent.roomPageDetails);
           this.onRequestMessages(jsonContent.roomPageDetails);
           break;
 

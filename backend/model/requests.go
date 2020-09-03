@@ -50,14 +50,14 @@ func (msg messageBytes) handleCreateNewRoom() {
 func (msg messageBytes) handleRequestUserToJoinRoom() {
 	var request JoinRequest
 	if err := json.Unmarshal(msg, &request); err != nil {
-		log.Println("Could not convert to required Joined Request struct")
+		log.Errorln("could not convert to required Joined Request struct, err:", err)
 		return
 	}
 
 	for _, user := range request.Users {
 		roomRegisteredUser, err := request.requestUserToJoinRoom(user)
 		if err != nil {
-			log.Println("Error while requesting to room", err)
+			log.Errorln("error while requesting to room, err:", err)
 			continue
 		}
 
@@ -75,7 +75,7 @@ func (msg messageBytes) handleRequestUserToJoinRoom() {
 
 		jsonContent, err := json.Marshal(data)
 		if err != nil {
-			log.Println("could not marshal to RequestUsersToJoinRoom, err:", err)
+			log.Errorln("could not marshal to RequestUsersToJoinRoom, err:", err)
 			continue
 		}
 
@@ -92,13 +92,13 @@ func (msg messageBytes) handleRequestUserToJoinRoom() {
 func (msg messageBytes) handleUserAcceptRoomRequest() {
 	var roomRequest Joined
 	if err := json.Unmarshal(msg, &roomRequest); err != nil {
-		log.Println("Could not convert to required Join Room Request struct")
+		log.Errorln("could not convert to required Join Room Request struct, err:", err)
 		return
 	}
 
 	users, err := roomRequest.acceptRoomRequest()
 	if err != nil {
-		log.Println("could not join room", err)
+		log.Errorln("could not accept room request", err)
 		return
 	}
 

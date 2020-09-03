@@ -3,7 +3,7 @@ package values
 const (
 	AdminCollectionName      = "administrators"
 	UsersCollectionName      = "users"
-	RoomsCollectionName      = "Rooms"
+	RoomsCollectionName      = "rooms"
 	MessageCollectionName    = "Messages"
 	FilesCollectionName      = "files"
 	FileChunksCollectionName = "fileChunks"

@@ -30,7 +30,7 @@
       <v-container class="overflow-y-auto scroll-behavior-smooth" style="height: 78vh;" fluid>
         <v-row>
           <v-col cols="12" v-for="(message,index) in currentViewedRoom.messages" :key="index">
-            <v-template v-if="message.type==messageType.Message">
+            <template v-if="message.type===messageType.Message">
               <v-row v-if="message.userID===userID">
                 <div align="right">
                   <v-card
@@ -58,10 +58,10 @@
                   </v-card-subtitle>
                 </v-card>
               </v-row>
-            </v-template>
+            </template>
 
-            <v-template v-else>
-              <v-col v-if="messageType.File" cols="12">
+            <template v-else>
+              <v-col v-if="message.type===messageType.File" cols="12">
                 <div align="center">
                   <v-chip href="https://github.com/metaclips">
                     <b>{{message.message}} sent by {{message.name}}. Click to download.</b>
@@ -69,7 +69,7 @@
                 </div>
               </v-col>
 
-              <v-col v-if="messageType.Info" cols="12">
+              <v-col v-if="message.type===messageType.Info" cols="12">
                 <div align="center">
                   <v-chip href="https://github.com/metaclips">
                     <b>{{message.message}}.</b>
@@ -77,7 +77,7 @@
                 </div>
               </v-col>
 
-              <v-col v-if="messageType.ClassSessionLink" cols="12">
+              <v-col v-if="message.type===messageType.ClassSessionLink" cols="12">
                 <div align="center">
                   <v-chip href="https://github.com/metaclips">
                     <b>Class session started by {{message.name}}. Click to join.</b>
@@ -85,14 +85,14 @@
                 </div>
               </v-col>
 
-              <v-col v-if="messageType.ClassSession" cols="12">
+              <v-col v-if="message.type===messageType.ClassSession" cols="12">
                 <div align="center">
                   <v-chip href="https://github.com/metaclips">
                     <b>Class session recording by {{message.name}}. Click to download.</b>
                   </v-chip>
                 </div>
               </v-col>
-            </v-template>
+            </template>
           </v-col>
         </v-row>
       </v-container>

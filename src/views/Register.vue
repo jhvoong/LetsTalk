@@ -10,11 +10,7 @@
         </v-col>
 
         <v-col class="text-center" cols="12">
-          <span class="text-center mx-auto" v-if="isAdmin">Welcome Admin</span>
-          <span
-            class="text-center mx-auto"
-            v-else
-          >Welcome to the University of Lagos chatting platform</span>
+          <span class="text-center mx-auto">Welcome to the University of Lagos chatting platform</span>
         </v-col>
 
         <v-col cols="12" sm="6">
