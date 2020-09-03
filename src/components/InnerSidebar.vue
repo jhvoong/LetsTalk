@@ -66,6 +66,8 @@
 </template>
 
 <script lang="ts">
+"use strict";
+
 import Vue from "vue";
 import vuetify from "@/plugins/vuetify";
 

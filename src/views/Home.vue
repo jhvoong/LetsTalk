@@ -92,6 +92,8 @@
 </template>
 
 <script lang="ts">
+"use strict";
+
 let socket: WebSocket;
 // @ is an alias to /src
 import Vue from "vue";
@@ -143,6 +145,7 @@ export default Vue.extend({
     onRequestMessages: function (roomDetails: RoomPageDetails) {
       if (roomDetails.firstLoad) {
         this.currentViewedRoom = roomDetails;
+
         if (this.currentViewedRoom.roomIcon == "") {
           this.currentViewedRoom.roomIcon = require("../assets/unilag.svg");
         }
