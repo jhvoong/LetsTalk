@@ -82,6 +82,8 @@
         <v-col cols="9">
           <ChatPage
             v-if="showChatPage"
+            :clearFetchedUsers="clearFetchedUsers"
+            :fetchedUsers="fetchedUsers"
             :sendWSMessage="sendWSMessage"
             :currentViewedRoom="currentViewedRoom"
           />
@@ -119,6 +121,7 @@ export default Vue.extend({
     joinedRooms: [] as JoinedRoom[],
     currentViewedRoom: {} as RoomPageDetails,
     joinRequests: [] as JoinRequest[],
+    fetchedUsers: [],
 
     userID: store.state.email,
     newRoomName: "",
@@ -209,6 +212,10 @@ export default Vue.extend({
       this.showNotificationDialog = false;
     },
 
+    clearFetchedUsers: function () {
+      this.fetchedUsers = [];
+    },
+
     activateNotificationDialog: function () {
       this.showNotificationDialog = true;
       this.showAddRoomDialog = false;
@@ -250,6 +257,11 @@ export default Vue.extend({
       switch (jsonContent.msgType) {
         case WSMessageType.UnauthorizedAccess:
           this.onUnAuthorizedAccess();
+          break;
+
+        case WSMessageType.SearchUser:
+          this.fetchedUsers = jsonContent.fetchedUsers;
+          console.log(this.fetchedUsers);
           break;
 
         case WSMessageType.WebsocketOpen:

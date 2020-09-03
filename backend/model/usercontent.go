@@ -538,12 +538,13 @@ func uploadFileGridFS(fileName string) error {
 
 func GetUser(key string, user string) (names []string) {
 	names = make([]string, 0)
-	for email := range values.MapEmailToName {
+	for email, name := range values.MapEmailToName {
 		if email == "" || email == user {
 			continue
 		}
+
 		if strings.Contains(email, key) {
-			names = append(names, email)
+			names = append(names, fmt.Sprintf("%s [%s]", name, email))
 		}
 	}
 

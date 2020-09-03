@@ -399,7 +399,7 @@ func (msg messageBytes) handleRequestDownload(author string) {
 func (msg messageBytes) handleFileDownload(author string) {
 	file := FileChunks{}
 	if err := json.Unmarshal(msg, &file); err != nil {
-		log.Println(err)
+		log.Errorln("error unmarshalling on handle file download, err:", err)
 		return
 	}
 
@@ -427,16 +427,16 @@ func (msg messageBytes) handleFileDownload(author string) {
 // handleSearchUser returns registered users that match searchText.
 func handleSearchUser(searchText, user string) {
 	data := struct {
-		UsersFound []string
-		MsgType    string `json:"msgType"`
+		UsersFound []string `json:"fetchedUsers"`
+		MsgType    string   `json:"msgType"`
 	}{
 		GetUser(searchText, user),
-		"getUsers",
+		values.SearchUserMsgType,
 	}
 
 	jsonContent, err := json.Marshal(&data)
 	if err != nil {
-		log.Println("Error while converting search user result to json", err)
+		log.Errorln("error while converting search user result to json", err)
 		return
 	}
 
@@ -471,7 +471,7 @@ func broadcastOnlineStatusToAllUserRoom(userEmail string, online bool) {
 	user := User{Email: userEmail}
 	associates, err := user.getAllUsersAssociates()
 	if err != nil {
-		log.Println("could not get users associate", err)
+		log.Errorln("could not get users associate", err)
 		return
 	}
 

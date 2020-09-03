@@ -14,9 +14,66 @@
 
         <v-spacer></v-spacer>
 
-        <v-btn class="mx-2" @click="startSession()" icon x-large>
-          <v-icon>mdi-account-multiple-plus-outline</v-icon>
-        </v-btn>
+        <v-menu
+          v-model="showAddUsersDialog"
+          left
+          rounded="r-xl"
+          open-on-hover
+          :close-on-content-click="false"
+          append-icon="mdi-magnify"
+          @keyup.enter.exact="searchUsers"
+          @click:append="searchUsers"
+          nudge-width="400"
+          offset-y
+        >
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn class="mx-2" v-bind="attrs" v-on="on" icon x-large>
+              <v-icon>mdi-account-multiple-plus-outline</v-icon>
+            </v-btn>
+          </template>
+
+          <v-card align="center">
+            <v-row style="max-width: 40vh;" align="center" justify="center">
+              <v-col cols="12"></v-col>
+              <v-col cols="12" sm="8">
+                <v-text-field
+                  v-model="searchUserName"
+                  append-icon="mdi-magnify"
+                  @keyup.enter.exact="searchUsers"
+                  @click:append="searchUsers"
+                  rounded
+                  filled
+                  placeholder="Search for contact email"
+                />
+              </v-col>
+
+              <v-col cols="12">
+                <v-container
+                  fluid
+                  class="ml-auto overflow-y-auto scroll-behavior-smooth"
+                  style="max-height: 40vh;"
+                >
+                  <v-checkbox
+                    class="text--truncate"
+                    dense
+                    multiple
+                    v-for="(user, i) in fetchedUsers"
+                    :key="i"
+                    :label="user"
+                    :value="user"
+                    v-model="selectedUsersToAddToRoom"
+                  ></v-checkbox>
+                </v-container>
+              </v-col>
+            </v-row>
+
+            <v-card-actions>
+              <v-btn @click="closeAddUserDialog" color="red" text>exit</v-btn>
+              <v-btn :disabled="selectedUsersToAddToRoom.length===0" color="green" text>add users</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-menu>
+
         <v-btn class="mx-2" @click="startSession()" icon x-large>
           <v-icon>mdi-video</v-icon>
         </v-btn>
@@ -119,6 +176,8 @@
 </template>
 
 <script lang="ts">
+"use strict";
+
 import Vue from "vue";
 import vuetify from "@/plugins/vuetify";
 import { Prop } from "vue/types/options";
@@ -132,17 +191,23 @@ export default Vue.extend({
 
   props: {
     currentViewedRoom: {} as Prop<RoomPageDetails>,
+    fetchedUsers: Array,
 
     sendWSMessage: Function,
+    clearFetchedUsers: Function,
   },
 
   data: () => ({
     vuetify: vuetify,
     messageContent: "",
     newRoomName: "",
+    searchUserName: "",
+
+    showAddUsersDialog: false,
+
+    selectedUsersToAddToRoom: [] as string[],
 
     messageType: MessageType,
-
     userID: store.state.email,
   }),
 
@@ -173,6 +238,22 @@ export default Vue.extend({
       };
 
       this.sendWSMessage(JSON.stringify(message));
+    },
+
+    searchUsers: function () {
+      const message = {
+        msgType: WSMessageType.SearchUser,
+        userID: this.userID,
+        searchText: this.searchUserName,
+      };
+
+      this.sendWSMessage(JSON.stringify(message));
+    },
+
+    closeAddUserDialog: function () {
+      this.selectedUsersToAddToRoom = [];
+      this.showAddUsersDialog = false;
+      this.clearFetchedUsers();
     },
   },
 });
