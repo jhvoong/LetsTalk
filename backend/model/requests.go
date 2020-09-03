@@ -161,7 +161,7 @@ func (msg messageBytes) handleNewMessage() {
 
 	jsonContent, err := json.Marshal(newMessage)
 	if err != nil {
-		log.Errorln("error converting message to json content, err:", err)
+		log.Errorln("error converting message to json, err:", err)
 		return
 	}
 
