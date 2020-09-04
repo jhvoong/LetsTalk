@@ -12,6 +12,17 @@ export interface JoinRequest extends RoomDetails {
     requestingUserID: string;
 }
 
+export interface FetchedUsers {
+    name: string;
+    userID: string;
+}
+
+export interface SentRoomRequest extends RoomDetails {
+    requesterID: string;
+    requesterName: string;
+    userRequested: string;
+}
+
 export interface RecentChatPreviewType extends RoomDetails {
     truncatedMessage: string; // Truncated message should be < 10 characters
 }
@@ -44,7 +55,7 @@ export interface Message {
     roomID: string;
     message: string;
 
-    index: Int16Array;
+    index: number;
 }
 
 export interface UsersIcon {

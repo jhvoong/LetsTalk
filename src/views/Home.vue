@@ -32,15 +32,15 @@
                 <v-container fluid style="max-height: 72vh;" class="overflow-y-auto">
                   <v-card-subtitle v-if="joinRequests.length==0">No Notifications</v-card-subtitle>
                   <v-card v-for="(joinRequest, index) in joinRequests" :key="index" flat>
-                    <v-card-text>{{joinRequest.requestingUserName}} [{{joinRequest.requestingUserID}}] wants you to join room {{joinRequest.RoomID}}</v-card-text>
-                    <v-card-action>
+                    <v-card-text>{{joinRequest.requestingUserName}} [{{joinRequest.requestingUserID}}] wants you to join room {{joinRequest.roomName}}</v-card-text>
+                    <v-card-actions>
                       <v-btn
                         @click="joinRoom(joinRequest.roomID, joinRequest.roomName, index)"
                         text
                         color="green"
                       >Join</v-btn>
                       <v-btn text color="red">Reject</v-btn>
-                    </v-card-action>
+                    </v-card-actions>
                   </v-card>
                 </v-container>
               </v-card-text>
@@ -102,12 +102,19 @@ import Vue from "vue";
 import store from "@/store";
 import router from "@/router";
 
-import { WSMessageType } from "./Constants";
+import { WSMessageType, MessageType } from "./Constants";
 
 import InnerSidebar from "../components/InnerSidebar.vue";
 import OuterSidebar from "../components/OuterSidebar.vue";
 import ChatPage from "../components/ChatPage.vue";
-import { JoinedRoom, RoomPageDetails, Message, JoinRequest } from "./Types";
+import {
+  JoinedRoom,
+  RoomPageDetails,
+  Message,
+  JoinRequest,
+  SentRoomRequest,
+  FetchedUsers,
+} from "./Types";
 
 export default Vue.extend({
   name: "Home",
@@ -121,7 +128,7 @@ export default Vue.extend({
     joinedRooms: [] as JoinedRoom[],
     currentViewedRoom: {} as RoomPageDetails,
     joinRequests: [] as JoinRequest[],
-    fetchedUsers: [],
+    fetchedUsers: [] as FetchedUsers[],
 
     userID: store.state.email,
     newRoomName: "",
@@ -139,15 +146,25 @@ export default Vue.extend({
       socket.close();
     },
 
-    onWebsocketOpen: function (joinedRooms: JoinedRoom[]) {
-      joinedRooms.map((joinedRoom: JoinedRoom) => {
-        this.joinedRooms.unshift(joinedRoom);
-      });
+    onWebsocketOpen: function (
+      joinedRooms: JoinedRoom[],
+      joinRequests: JoinRequest[]
+    ) {
+      if (joinedRooms) {
+        this.joinedRooms = joinedRooms;
+      }
+
+      if (joinRequests) {
+        this.joinRequests = joinRequests;
+      }
     },
 
     onRequestMessages: function (roomDetails: RoomPageDetails) {
       if (roomDetails.firstLoad) {
         this.currentViewedRoom = roomDetails;
+        if (!this.currentViewedRoom.messages) {
+          this.currentViewedRoom.messages = [];
+        }
 
         if (this.currentViewedRoom.roomIcon == "") {
           this.currentViewedRoom.roomIcon = require("../assets/unilag.svg");
@@ -166,7 +183,6 @@ export default Vue.extend({
     },
 
     onJoinRoom: function (joinedRoom: JoinedRoom) {
-      console.log(this.joinedRooms, this.joinedRooms.length, joinedRoom);
       this.joinedRooms.unshift(joinedRoom);
     },
 
@@ -179,21 +195,51 @@ export default Vue.extend({
       // ToDo: add notification sound and also add sidebar preview of recent message.
     },
 
+    onSentRoomRequest: function (sentRequest: SentRoomRequest) {
+      if (this.userID === sentRequest.userRequested) {
+        console.log("you just received a request");
+        this.joinRequests.unshift({
+          requestingUserName: sentRequest.requesterName,
+          requestingUserID: sentRequest.requesterID,
+          roomID: sentRequest.roomID,
+          roomName: sentRequest.roomName,
+        });
+      } else if (this.currentViewedRoom.roomID == sentRequest.roomID) {
+        const message =
+          sentRequest.userRequested +
+          " was requested to join the room by " +
+          sentRequest.requesterID;
+
+        this.currentViewedRoom.messages.push({
+          type: MessageType.Info,
+          message: message,
+          time: "",
+          name: "",
+          userID: "",
+          roomID: "",
+          index: 0,
+        });
+
+        console.log("sent notification");
+      } else {
+        // ToDo: add sidebar message preview.
+      }
+    },
+
     changeViewedRoomIndex: function (index: number) {
       this.indexOfCurrentViewedRoom = index;
     },
 
     joinRoom: function (roomID: string, roomName: string, index: number) {
       const message = {
+        msgType: WSMessageType.JoinRoom,
+        userID: this.userID,
         joined: true,
         roomID: roomID,
         roomName: roomName,
-        msgType: WSMessageType.JoinRoom,
-        userID: this.userID,
       };
 
       socket.send(JSON.stringify(message));
-      this.joinRequests.splice(index, 1);
     },
 
     createRoom: function () {
@@ -265,7 +311,11 @@ export default Vue.extend({
           break;
 
         case WSMessageType.WebsocketOpen:
-          this.onWebsocketOpen(jsonContent.joinedRooms);
+          console.log(jsonContent.joinRequests);
+          this.onWebsocketOpen(
+            jsonContent.joinedRooms,
+            jsonContent.joinRequests
+          );
           break;
 
         case WSMessageType.RequestMessages:
@@ -279,6 +329,10 @@ export default Vue.extend({
 
         case WSMessageType.NewMessage:
           this.onNewMessage(jsonContent);
+          break;
+
+        case WSMessageType.SentRoomRequest:
+          this.onSentRoomRequest(jsonContent);
           break;
       }
     };

@@ -6,6 +6,8 @@ export const WSMessageType = {
     JoinRoom: "JoinRoom",
     CreateRoom: "CreateRoom",
     SearchUser: "SearchUser",
+    RequestUsersToJoinRoom: "RequestUsersToJoinRoom",
+    SentRoomRequest: "SentRoomRequest",
 }
 
 export const SideBarOptions = {

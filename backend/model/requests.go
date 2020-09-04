@@ -62,15 +62,16 @@ func (msg messageBytes) handleRequestUserToJoinRoom() {
 		}
 
 		data := struct {
+			MsgType       string `json:"msgType"`
 			RequesterID   string `json:"requesterID"`
 			RequesterName string `json:"requesterName"`
 			UserRequested string `json:"userRequested"`
 			RoomID        string `json:"roomID"`
 			RoomName      string `json:"roomName"`
-			MsgType       string `json:"msgType"`
 		}{
+			values.SentRoomRequestMsgType,
 			request.RequestingUserID, request.RequestingUserName,
-			user, request.RoomID, request.RoomName, "RequestUsersToJoinRoom",
+			user, request.RoomID, request.RoomName,
 		}
 
 		jsonContent, err := json.Marshal(data)
@@ -427,8 +428,8 @@ func (msg messageBytes) handleFileDownload(author string) {
 // handleSearchUser returns registered users that match searchText.
 func handleSearchUser(searchText, user string) {
 	data := struct {
-		UsersFound []string `json:"fetchedUsers"`
-		MsgType    string   `json:"msgType"`
+		UsersFound interface{} `json:"fetchedUsers"`
+		MsgType    string      `json:"msgType"`
 	}{
 		GetUser(searchText, user),
 		values.SearchUserMsgType,
@@ -453,9 +454,9 @@ func handleLoadUserContent(email string) {
 	}
 
 	request := map[string]interface{}{
-		"msgType":         "WebsocketOpen",
-		"joinedRooms":     userInfo.RoomsJoined,
-		"roomJoinRequest": userInfo.JoinRequest,
+		"msgType":      "WebsocketOpen",
+		"joinedRooms":  userInfo.RoomsJoined,
+		"joinRequests": userInfo.JoinRequest,
 	}
 
 	if data, err := json.Marshal(request); err == nil && HubConstruct.Users[email] != nil {

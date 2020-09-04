@@ -59,8 +59,8 @@
                     multiple
                     v-for="(user, i) in fetchedUsers"
                     :key="i"
-                    :label="user"
-                    :value="user"
+                    :label="user.name+' ['+user.userID+']'"
+                    :value="user.userID"
                     v-model="selectedUsersToAddToRoom"
                   ></v-checkbox>
                 </v-container>
@@ -69,7 +69,12 @@
 
             <v-card-actions>
               <v-btn @click="closeAddUserDialog" color="red" text>exit</v-btn>
-              <v-btn :disabled="selectedUsersToAddToRoom.length===0" color="green" text>add users</v-btn>
+              <v-btn
+                @click="requestUserToJoinRoom"
+                :disabled="selectedUsersToAddToRoom.length===0"
+                color="green"
+                text
+              >add users</v-btn>
             </v-card-actions>
           </v-card>
         </v-menu>
@@ -183,7 +188,7 @@ import vuetify from "@/plugins/vuetify";
 import { Prop } from "vue/types/options";
 import store from "@/store";
 
-import { RoomPageDetails } from "../views/Types";
+import { RoomPageDetails, FetchedUsers } from "../views/Types";
 import { WSMessageType, MessageType } from "../views/Constants";
 
 export default Vue.extend({
@@ -191,7 +196,7 @@ export default Vue.extend({
 
   props: {
     currentViewedRoom: {} as Prop<RoomPageDetails>,
-    fetchedUsers: Array,
+    fetchedUsers: Array as Prop<FetchedUsers[]>,
 
     sendWSMessage: Function,
     clearFetchedUsers: Function,
@@ -209,6 +214,7 @@ export default Vue.extend({
 
     messageType: MessageType,
     userID: store.state.email,
+    userName: store.state.name,
   }),
 
   methods: {
@@ -217,9 +223,9 @@ export default Vue.extend({
 
       const message = {
         msgType: WSMessageType.NewMessage,
+        userID: this.userID,
         roomID: this.currentViewedRoom.roomID,
         message: this.messageContent,
-        userID: this.userID,
         type: this.messageType.Message,
       };
 
@@ -230,6 +236,7 @@ export default Vue.extend({
     loadMoreMessages: function () {
       const message = {
         msgType: WSMessageType.RequestMessages,
+        userID: this.userID,
         roomID: this.currentViewedRoom.roomID,
 
         messageCount: this.currentViewedRoom.messages[
@@ -248,6 +255,21 @@ export default Vue.extend({
       };
 
       this.sendWSMessage(JSON.stringify(message));
+    },
+
+    requestUserToJoinRoom: function () {
+      const message = {
+        msgType: WSMessageType.RequestUsersToJoinRoom,
+        userID: this.userID,
+        roomID: this.currentViewedRoom.roomID,
+        roomName: this.currentViewedRoom.roomName,
+        requestingUserName: this.userName,
+        requestingUserID: this.userID,
+        users: this.selectedUsersToAddToRoom,
+      };
+
+      this.sendWSMessage(JSON.stringify(message));
+      this.closeAddUserDialog();
     },
 
     closeAddUserDialog: function () {

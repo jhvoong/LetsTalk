@@ -49,29 +49,6 @@ func (b *User) getUser() error {
 	return nil
 }
 
-func (b User) addUserToRoom(roomID, roomName string) error {
-	b.updateRoomsJoinedByUsers(roomID, roomName)
-	var chats Room
-	message := Message{
-		Message: b.Email + " Joined",
-		Type:    values.MessageTypeInfo,
-	}
-
-	result := db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{
-		"_id": roomID,
-	})
-
-	if err := result.Decode(&chats); err != nil {
-		return err
-	}
-
-	chats.Messages = append(chats.Messages, message)
-	_, err := db.Collection(values.RoomsCollectionName).UpdateOne(ctx, bson.M{"_id": roomID},
-		bson.M{"$set": bson.M{"messages": chats.Messages}})
-
-	return err
-}
-
 func (b *User) updateRoomsJoinedByUsers(roomID, roomName string) error {
 	if err := b.getUser(); err != nil {
 		return err
@@ -173,11 +150,15 @@ func (b User) exitRoom(roomID string) ([]string, error) {
 		return nil, err
 	}
 
-	exitMessage := Message{
+	_, err = Message{
+		RoomID:  room.RoomID,
 		Type:    values.MessageTypeInfo,
 		Message: b.Email + " left the room",
+	}.saveMessageContent()
+
+	if err != nil {
+		return nil, err
 	}
-	room.Messages = append(room.Messages, exitMessage)
 
 	for i, user := range room.RegisteredUsers {
 		if user == b.Email {
@@ -193,7 +174,7 @@ func (b User) exitRoom(roomID string) ([]string, error) {
 
 	_, err = db.Collection(values.RoomsCollectionName).UpdateOne(ctx, bson.M{
 		"_id": room.RoomID,
-	}, bson.M{"$set": bson.M{"registeredUsers": room.RegisteredUsers, "messages": room.Messages}})
+	}, bson.M{"$set": bson.M{"registeredUsers": room.RegisteredUsers}})
 
 	return room.RegisteredUsers, err
 }
@@ -236,7 +217,7 @@ func (b User) validateUser(uniqueID string) error {
 func (b Message) saveMessageContent() ([]string, error) {
 	var roomDetails Room
 
-	opts := options.FindOneAndUpdate().SetProjection(bson.M{"roomID": 0, "roomName": 0}).
+	opts := options.FindOneAndUpdate().SetProjection(bson.M{"roomName": 0}).
 		SetReturnDocument(options.After)
 
 	result := db.Collection(values.RoomsCollectionName).
@@ -379,25 +360,27 @@ func (b Joined) acceptRoomRequest() ([]string, error) {
 	}
 
 	message := Message{
+		RoomID:  b.RoomID,
 		Message: b.Email + " Joined",
 		Type:    values.MessageTypeInfo,
 	}
 
+	if _, err := message.saveMessageContent(); err != nil {
+		return nil, err
+	}
+
 	messages.RegisteredUsers = append(messages.RegisteredUsers, b.Email)
-	messages.Messages = append(messages.Messages, message)
 
 	_, err = db.Collection(values.RoomsCollectionName).UpdateOne(ctx, bson.M{
 		"_id": b.RoomID,
-	}, bson.M{"$set": bson.M{"registeredUsers": messages.RegisteredUsers, "messages": messages.Messages}})
+	}, bson.M{"$set": bson.M{"registeredUsers": messages.RegisteredUsers}})
 
 	return messages.RegisteredUsers, err
 }
 
-// requestUserToJoinRoom confirms if requester is part of room then sends join request to user.
-// Join request is saved to database so that if user wants to join, it is verified.
+// requestUserToJoinRoom confirms sends join request to user.
 func (b JoinRequest) requestUserToJoinRoom(userToJoinEmail string) ([]string, error) {
 	var room Room
-	// ToDo: we dont need to retrieve room messages here.
 	result := db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{"_id": b.RoomID})
 
 	if err := result.Decode(&room); err != nil {
@@ -409,8 +392,8 @@ func (b JoinRequest) requestUserToJoinRoom(userToJoinEmail string) ([]string, er
 	for _, registeredUser := range room.RegisteredUsers {
 		if registeredUser == b.RequestingUserID {
 			requesterLegit = true
-
 			break
+
 		} else if registeredUser == userToJoinEmail {
 			return nil, values.ErrUserExistInRoom
 		}
@@ -427,7 +410,7 @@ func (b JoinRequest) requestUserToJoinRoom(userToJoinEmail string) ([]string, er
 		return nil, err
 	}
 
-	// Check if user has already been requested by the room.
+	// Return error if user is already requested.
 	for _, request := range user.JoinRequest {
 		if b.RoomID == request.RoomID {
 			return nil, values.ErrUserAlreadyRequested
@@ -443,15 +426,13 @@ func (b JoinRequest) requestUserToJoinRoom(userToJoinEmail string) ([]string, er
 		return nil, err
 	}
 
-	message := Message{
+	_, err = Message{
+		RoomID:  b.RoomID,
+		UserID:  b.RequestingUserID,
 		Message: fmt.Sprintf("%s was requested to join the room by %s", userToJoinEmail, b.RequestingUserID),
 		Type:    values.MessageTypeInfo,
-	}
+	}.saveMessageContent()
 
-	room.Messages = append(room.Messages, message)
-
-	_, err = db.Collection(values.RoomsCollectionName).
-		UpdateOne(ctx, bson.M{"_id": b.RoomID}, bson.M{"$set": bson.M{"messages": room.Messages}})
 	return room.RegisteredUsers, err
 }
 
@@ -536,17 +517,26 @@ func uploadFileGridFS(fileName string) error {
 	return nil
 }
 
-func GetUser(key string, user string) (names []string) {
-	names = make([]string, 0)
+func GetUser(key string, user string) interface{} {
+	names := make([]struct {
+		Name  string `json:"name"`
+		Email string `json:"userID"`
+	}, 0)
+
 	for email, name := range values.MapEmailToName {
 		if email == "" || email == user {
 			continue
 		}
 
 		if strings.Contains(email, key) {
-			names = append(names, fmt.Sprintf("%s [%s]", name, email))
+			names = append(names, struct {
+				Name  string `json:"name"`
+				Email string `json:"userID"`
+			}{
+				name, email,
+			})
 		}
 	}
 
-	return
+	return names
 }

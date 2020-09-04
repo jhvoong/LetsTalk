@@ -26,6 +26,7 @@ const (
 	CreateRoomMsgType             = "CreateRoom"
 	ExitRoomMsgType               = "ExitRoom"
 	RequestUsersToJoinRoomMsgType = "RequestUsersToJoinRoom"
+	SentRoomRequestMsgType        = "SentRoomRequest"
 	JoinRoomMsgType               = "JoinRoom"
 
 	UploadFileErrorMsgType   = "UploadFileError" // UploadFileErrorMsgType is sent to client only.
