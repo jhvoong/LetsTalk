@@ -5,6 +5,8 @@ export interface RoomDetails {
 
 export interface JoinedRoom extends RoomDetails {
     roomIcon: string;
+    joined: boolean;
+    userID: string;
 }
 
 export interface JoinRequest extends RoomDetails {

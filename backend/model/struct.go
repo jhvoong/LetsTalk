@@ -87,6 +87,7 @@ type Joined struct {
 	RoomID      string `json:"roomID"`
 	RoomName    string `json:"roomName"`
 	Email       string `json:"userID"`
+	RequesterID string `json:"requesterID"`
 	Joined      bool   `json:"joined"`
 	MessageType string `bson:"-" json:"msgType"`
 }

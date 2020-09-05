@@ -35,11 +35,15 @@
                     <v-card-text>{{joinRequest.requestingUserName}} [{{joinRequest.requestingUserID}}] wants you to join room {{joinRequest.roomName}}</v-card-text>
                     <v-card-actions>
                       <v-btn
-                        @click="joinRoom(joinRequest.roomID, joinRequest.roomName, index)"
+                        @click="joinRoom(joinRequest.requestingUserID, joinRequest.roomID, joinRequest.roomName,true, index)"
                         text
                         color="green"
                       >Join</v-btn>
-                      <v-btn text color="red">Reject</v-btn>
+                      <v-btn
+                        @click="joinRoom(joinRequest.requestingUserID, joinRequest.roomID, joinRequest.roomName,false, index)"
+                        text
+                        color="red"
+                      >Reject</v-btn>
                     </v-card-actions>
                   </v-card>
                 </v-container>
@@ -174,6 +178,7 @@ export default Vue.extend({
         this.joinedRooms[
           this.indexOfCurrentViewedRoom
         ].roomIcon = this.currentViewedRoom.roomIcon;
+
         return;
       }
 
@@ -184,6 +189,22 @@ export default Vue.extend({
 
     onJoinRoom: function (joinedRoom: JoinedRoom) {
       this.joinedRooms.unshift(joinedRoom);
+      if (this.currentViewedRoom.roomID === joinedRoom.roomID) {
+        let message: string = joinedRoom.userID + " Rejected join request.";
+        if (joinedRoom.joined) {
+          message = joinedRoom.userID + " Accepted join request.";
+        }
+
+        this.currentViewedRoom.messages.push({
+          time: "",
+          type: MessageType.Info,
+          name: "",
+          userID: "",
+          roomID: "",
+          message: message,
+          index: 0,
+        });
+      }
     },
 
     onNewMessage: function (message: Message) {
@@ -197,7 +218,6 @@ export default Vue.extend({
 
     onSentRoomRequest: function (sentRequest: SentRoomRequest) {
       if (this.userID === sentRequest.userRequested) {
-        console.log("you just received a request");
         this.joinRequests.unshift({
           requestingUserName: sentRequest.requesterName,
           requestingUserID: sentRequest.requesterID,
@@ -207,7 +227,7 @@ export default Vue.extend({
       } else if (this.currentViewedRoom.roomID == sentRequest.roomID) {
         const message =
           sentRequest.userRequested +
-          " was requested to join the room by " +
+          " Was requested to join the room by " +
           sentRequest.requesterID;
 
         this.currentViewedRoom.messages.push({
@@ -230,16 +250,24 @@ export default Vue.extend({
       this.indexOfCurrentViewedRoom = index;
     },
 
-    joinRoom: function (roomID: string, roomName: string, index: number) {
+    joinRoom: function (
+      requestingUserID: string,
+      roomID: string,
+      roomName: string,
+      joined: boolean,
+      index: number
+    ) {
       const message = {
         msgType: WSMessageType.JoinRoom,
         userID: this.userID,
-        joined: true,
+        requesterID: requestingUserID,
+        joined: joined,
         roomID: roomID,
         roomName: roomName,
       };
 
       socket.send(JSON.stringify(message));
+      this.joinRequests.splice(index, 1);
     },
 
     createRoom: function () {

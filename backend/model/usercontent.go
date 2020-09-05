@@ -321,8 +321,8 @@ func (b Joined) acceptRoomRequest() ([]string, error) {
 		return nil, err
 	}
 
-	// Check users join requests for room.
 	var joinRequestLegit bool
+	// Confirm if join request was sent to user and saved to DB.
 	for i, request := range user.JoinRequest {
 		if request.RoomID == b.RoomID {
 			joinRequestLegit = true
@@ -335,33 +335,35 @@ func (b Joined) acceptRoomRequest() ([]string, error) {
 		return nil, values.ErrIllicitJoinRequest
 	}
 
-	if b.Joined {
-		user.RoomsJoined = append(user.RoomsJoined, RoomsJoined{RoomID: b.RoomID, RoomName: b.RoomName})
-	}
+	var messages Room
+	result = db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{
+		"_id": b.RoomID,
+	})
 
-	_, err = db.Collection(values.UsersCollectionName).UpdateOne(ctx, bson.M{"_id": b.Email},
-		bson.M{"$set": bson.M{"joinRequest": user.JoinRequest, "roomsJoined": user.RoomsJoined}})
-	if err != nil {
+	if err := result.Decode(&messages); err != nil {
 		return nil, err
 	}
 
 	// Room request is declined.
 	if !b.Joined {
-		return nil, nil
-	}
+		message := Message{
+			UserID:  b.RequesterID,
+			RoomID:  b.RoomID,
+			Message: b.Email + "Refused join request.",
+			Type:    values.MessageTypeInfo,
+		}
 
-	result = db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{
-		"_id": b.RoomID,
-	})
+		if _, err := message.saveMessageContent(); err != nil {
+			return nil, err
+		}
 
-	var messages Room
-	if err := result.Decode(&messages); err != nil {
-		return nil, err
+		return messages.RegisteredUsers, nil
 	}
 
 	message := Message{
+		UserID:  b.RequesterID,
 		RoomID:  b.RoomID,
-		Message: b.Email + " Joined",
+		Message: b.Email + " Accepted join request.",
 		Type:    values.MessageTypeInfo,
 	}
 
@@ -374,6 +376,18 @@ func (b Joined) acceptRoomRequest() ([]string, error) {
 	_, err = db.Collection(values.RoomsCollectionName).UpdateOne(ctx, bson.M{
 		"_id": b.RoomID,
 	}, bson.M{"$set": bson.M{"registeredUsers": messages.RegisteredUsers}})
+
+	// Save rooms joined by user to user collection.
+	if b.Joined {
+		user.RoomsJoined = append(user.RoomsJoined, RoomsJoined{RoomID: b.RoomID, RoomName: b.RoomName})
+
+		_, err = db.Collection(values.UsersCollectionName).UpdateOne(ctx, bson.M{"_id": b.Email},
+			bson.M{"$set": bson.M{"joinRequest": user.JoinRequest, "roomsJoined": user.RoomsJoined}})
+
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return messages.RegisteredUsers, err
 }
@@ -400,7 +414,7 @@ func (b JoinRequest) requestUserToJoinRoom(userToJoinEmail string) ([]string, er
 	}
 
 	if !requesterLegit {
-		return nil, errors.New("Invalid user made a RequestUsersToJoinRoom request Name: " + b.RequestingUserID)
+		return nil, errors.New("invalid user made a RequestUsersToJoinRoom request Name: " + b.RequestingUserID)
 	}
 
 	result = db.Collection(values.UsersCollectionName).FindOne(ctx, bson.M{"_id": userToJoinEmail})

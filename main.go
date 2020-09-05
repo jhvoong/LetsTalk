@@ -46,6 +46,8 @@ func main() {
 	handler := cors.New(cors.Options{
 		Debug:          true,
 		AllowedOrigins: values.Config.CorsAllowedOrigins,
+		AllowedMethods: []string{"GET", "OPTIONS", "POST"},
+		AllowedHeaders: []string{"Content-Type"},
 	}).Handler(router)
 
 	// Optional use of TLS due to Heroku serving TLS at low level.
