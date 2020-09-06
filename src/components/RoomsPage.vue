@@ -80,7 +80,7 @@ import { JoinedRoom, RecentChatPreview, UnreadRooms } from "../views/Types";
 import { WSMessageType } from "../views/Constants";
 
 export default Vue.extend({
-  name: "OuterSidebar",
+  name: "RoomsPage",
 
   props: {
     joinedRooms: Array as Prop<JoinedRoom[]>,

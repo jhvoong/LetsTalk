@@ -1,7 +1,7 @@
 <template>
   <v-row no-gutters class="fill-height">
     <v-col cols="1">
-      <InnerSidebar
+      <SideBar
         :activateAddRoomDialog="activateAddRoomDialog"
         :activateNotificationDialog="activateNotificationDialog"
         :deactivateAllDialogs="deactivateAllDialogs"
@@ -78,7 +78,7 @@
 
       <v-row v-else no-gutters>
         <v-col cols="3">
-          <OuterSidebar
+          <RoomsPage
             :changeViewedRoomIndex="changeViewedRoomIndex"
             :joinedRooms="joinedRooms"
             :sendWSMessage="sendWSMessage"
@@ -111,8 +111,8 @@ import router from "@/router";
 
 import { WSMessageType, MessageType } from "./Constants";
 
-import InnerSidebar from "../components/InnerSidebar.vue";
-import OuterSidebar from "../components/OuterSidebar.vue";
+import SideBar from "../components/Sidebar.vue";
+import RoomsPage from "../components/RoomsPage.vue";
 import ChatPage from "../components/ChatPage.vue";
 import {
   JoinedRoom,
@@ -127,8 +127,8 @@ import {
 export default Vue.extend({
   name: "Home",
   components: {
-    InnerSidebar,
-    OuterSidebar,
+    SideBar,
+    RoomsPage,
     ChatPage,
   },
 
@@ -254,13 +254,17 @@ export default Vue.extend({
       }
     },
 
+    updateRoomContentPage: function () {
+      this.$children[1].$forceUpdate();
+    },
+
     getUnreadNotifications: function (
       roomID: string,
       addToUnreadNotifs: boolean
     ) {
       return new Promise(() => {
         this.unreadRoomMessages[roomID] = addToUnreadNotifs;
-        this.$children[1].$forceUpdate();
+        this.updateRoomContentPage();
 
         let messageCount = 0;
         for (const room in this.unreadRoomMessages) {
