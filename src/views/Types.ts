@@ -67,3 +67,7 @@ export interface UsersIcon {
 export interface UsersOnline {
     [index: string]: boolean;
 }
+
+export interface UnreadRooms {
+    [index: string]: boolean;
+}

@@ -5,6 +5,8 @@
         :activateAddRoomDialog="activateAddRoomDialog"
         :activateNotificationDialog="activateNotificationDialog"
         :deactivateAllDialogs="deactivateAllDialogs"
+        :unreadNotifications="unreadNotificationsCount"
+        :unreadRoomMessages="unreadRoomMessageCount"
       />
     </v-col>
 
@@ -80,6 +82,7 @@
             :changeViewedRoomIndex="changeViewedRoomIndex"
             :joinedRooms="joinedRooms"
             :sendWSMessage="sendWSMessage"
+            :unreadRoomMessages="unreadRoomMessages"
           />
         </v-col>
 
@@ -118,6 +121,7 @@ import {
   JoinRequest,
   SentRoomRequest,
   FetchedUsers,
+  UnreadRooms,
 } from "./Types";
 
 export default Vue.extend({
@@ -133,6 +137,7 @@ export default Vue.extend({
     currentViewedRoom: {} as RoomPageDetails,
     joinRequests: [] as JoinRequest[],
     fetchedUsers: [] as FetchedUsers[],
+    unreadRoomMessages: {} as UnreadRooms,
 
     userID: store.state.email,
     newRoomName: "",
@@ -142,6 +147,8 @@ export default Vue.extend({
     showChatPage: false,
 
     indexOfCurrentViewedRoom: 0,
+    unreadRoomMessageCount: 0,
+    unreadNotificationsCount: 0,
   }),
 
   methods: {
@@ -160,6 +167,8 @@ export default Vue.extend({
 
       if (joinRequests) {
         this.joinRequests = joinRequests;
+        this.unreadNotificationsCount = joinRequests.length;
+        console.log(this.unreadNotificationsCount);
       }
     },
 
@@ -168,10 +177,6 @@ export default Vue.extend({
         this.currentViewedRoom = roomDetails;
         if (!this.currentViewedRoom.messages) {
           this.currentViewedRoom.messages = [];
-        }
-
-        if (this.currentViewedRoom.roomIcon == "") {
-          this.currentViewedRoom.roomIcon = require("../assets/unilag.svg");
         }
 
         console.log(this.joinedRooms.length, this.indexOfCurrentViewedRoom);
@@ -189,6 +194,7 @@ export default Vue.extend({
 
     onJoinRoom: function (joinedRoom: JoinedRoom) {
       this.joinedRooms.unshift(joinedRoom);
+
       if (this.currentViewedRoom.roomID === joinedRoom.roomID) {
         let message: string = joinedRoom.userID + " Rejected join request.";
         if (joinedRoom.joined) {
@@ -212,6 +218,8 @@ export default Vue.extend({
         this.currentViewedRoom.messages.push(message);
         return;
       }
+
+      this.getUnreadNotifications(message.roomID, true);
 
       // ToDo: add notification sound and also add sidebar preview of recent message.
     },
@@ -246,8 +254,31 @@ export default Vue.extend({
       }
     },
 
+    getUnreadNotifications: function (
+      roomID: string,
+      addToUnreadNotifs: boolean
+    ) {
+      return new Promise(() => {
+        this.unreadRoomMessages[roomID] = addToUnreadNotifs;
+        this.$children[1].$forceUpdate();
+
+        let messageCount = 0;
+        for (const room in this.unreadRoomMessages) {
+          if (
+            this.unreadRoomMessages[room] &&
+            this.unreadRoomMessages[room] == true
+          )
+            messageCount++;
+        }
+
+        this.unreadRoomMessageCount = messageCount;
+      });
+    },
+
     changeViewedRoomIndex: function (index: number) {
       this.indexOfCurrentViewedRoom = index;
+      console.log("removing", this.joinedRooms[index].roomID);
+      this.getUnreadNotifications(this.joinedRooms[index].roomID, false);
     },
 
     joinRoom: function (
@@ -268,6 +299,7 @@ export default Vue.extend({
 
       socket.send(JSON.stringify(message));
       this.joinRequests.splice(index, 1);
+      this.unreadNotificationsCount = this.joinRequests.length;
     },
 
     createRoom: function () {
@@ -339,7 +371,6 @@ export default Vue.extend({
           break;
 
         case WSMessageType.WebsocketOpen:
-          console.log(jsonContent.joinRequests);
           this.onWebsocketOpen(
             jsonContent.joinedRooms,
             jsonContent.joinRequests

@@ -11,12 +11,14 @@
         <v-col cols="12">
           <v-row>
             <v-col class="my-2" cols="12">
-              <v-btn @click="onRoom" x-large icon>
-                <v-icon
-                  :color="highlightedSidebarOption=='Rooms'?'blue':''"
-                  x-large
-                >mdi-message-outline</v-icon>
-              </v-btn>
+              <v-badge bordered overlap :content="unreadRoomMessages" :value="unreadRoomMessages">
+                <v-btn @click="onRoom" icon>
+                  <v-icon
+                    :color="highlightedSidebarOption=='Rooms'?'blue':''"
+                    x-large
+                  >mdi-message-outline</v-icon>
+                </v-btn>
+              </v-badge>
             </v-col>
 
             <v-col class="my-2" cols="12">
@@ -29,12 +31,14 @@
             </v-col>
 
             <v-col class="my-2" cols="12">
-              <v-btn @click="onNotification" x-large icon>
-                <v-icon
-                  :color="highlightedSidebarOption=='Notifications'?'blue':''"
-                  x-large
-                >mdi-bell-outline</v-icon>
-              </v-btn>
+              <v-badge bordered overlap :content="unreadNotifications" :value="unreadNotifications">
+                <v-btn @click="onNotification" icon>
+                  <v-icon
+                    :color="highlightedSidebarOption=='Notifications'?'blue':''"
+                    x-large
+                  >mdi-bell-outline</v-icon>
+                </v-btn>
+              </v-badge>
             </v-col>
           </v-row>
         </v-col>
@@ -43,7 +47,7 @@
           <v-row>
             <v-col class="my-2" cols="12">
               <v-btn @click="changeTheme" x-large icon>
-                <v-icon :color="themeColor" x-large>{{themeOption}}</v-icon>
+                <v-icon :color="themeColor" x-large>mdi-moon-waxing-crescent</v-icon>
               </v-btn>
             </v-col>
 
@@ -80,10 +84,12 @@ export default Vue.extend({
     activateAddRoomDialog: Function,
     activateNotificationDialog: Function,
     deactivateAllDialogs: Function,
+
+    unreadRoomMessages: Number,
+    unreadNotifications: Number,
   },
 
   data: () => ({
-    themeOption: "mdi-moon-waxing-crescent",
     themeColor: "",
     highlightedSidebarOption: "Rooms",
     newRoomName: "",

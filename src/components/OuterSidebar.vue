@@ -33,7 +33,15 @@
             @click="loadChatContent(joinedRoom.roomID, index)"
           >
             <v-list-item-avatar>
-              <v-badge bordered bottom color="deep-purple accent-4" dot offset-x="10" offset-y="10">
+              <v-badge
+                bordered
+                overlap
+                bottom
+                dot
+                :value="unreadRoomMessages[joinedRoom.roomID]?unreadRoomMessages[joinedRoom.roomID]:false"
+                offset-x="10"
+                offset-y="10"
+              >
                 <v-avatar size="30">
                   <v-img :src="joinedRoom.roomIcon?joinedRoom.icon:require('../assets/unilag.svg')"></v-img>
                 </v-avatar>
@@ -68,7 +76,7 @@ import Vue from "vue";
 import { Prop } from "vue/types/options";
 import store from "@/store";
 
-import { JoinedRoom, RecentChatPreview } from "../views/Types";
+import { JoinedRoom, RecentChatPreview, UnreadRooms } from "../views/Types";
 import { WSMessageType } from "../views/Constants";
 
 export default Vue.extend({
@@ -77,6 +85,7 @@ export default Vue.extend({
   props: {
     joinedRooms: Array as Prop<JoinedRoom[]>,
     recentChatPreview: {} as Prop<RecentChatPreview>,
+    unreadRoomMessages: {} as Prop<UnreadRooms>,
 
     sendWSMessage: Function,
     changeViewedRoomIndex: Function,
