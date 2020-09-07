@@ -26,7 +26,7 @@
 
     <v-container style="max-height: 72vh;" class="overflow-y-auto" cols="12">
       <v-list nav tile dense three-line>
-        <v-list-item-group mandatory>
+        <v-list-item-group v-model="indexOfCurrentViewedRoom" mandatory>
           <v-list-item
             v-for="(joinedRoom,index) in joinedRooms"
             :key="index"
@@ -89,6 +89,8 @@ export default Vue.extend({
 
     sendWSMessage: Function,
     changeViewedRoomIndex: Function,
+
+    indexOfCurrentViewedRoom: Number,
   },
 
   data: () => ({

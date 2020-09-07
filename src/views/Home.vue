@@ -80,6 +80,7 @@
       <v-row v-else no-gutters>
         <v-col cols="3">
           <RoomsPage
+            :indexOfCurrentViewedRoom="indexOfCurrentViewedRoom"
             :recentChatPreview="recentChatPreview"
             :changeViewedRoomIndex="changeViewedRoomIndex"
             :joinedRooms="joinedRooms"
@@ -194,14 +195,13 @@ export default Vue.extend({
         for (let i = roomDetails.messages.length - 1; i >= 0; i--) {
           this.currentViewedRoom.messages.unshift(roomDetails.messages[i]);
         }
-
-        console.log(this.currentViewedRoom.messages);
       }
     },
 
     onJoinRoom: function (joinedRoom: JoinedRoom) {
       if (joinedRoom.userID === this.userID) {
         this.joinedRooms.unshift(joinedRoom);
+        this.indexOfCurrentViewedRoom++;
       } else if (this.currentViewedRoom.roomID === joinedRoom.roomID) {
         let message: string = joinedRoom.userID + " Rejected join request.";
         if (joinedRoom.joined) {
@@ -225,11 +225,11 @@ export default Vue.extend({
       if (this.currentViewedRoom.roomID === message.roomID) {
         this.updateRoomContentPage();
         this.currentViewedRoom.messages.push(message);
+        this.$nextTick(() => this.scrollToBottomOfChatPage());
         return;
       }
 
       this.getUnreadNotifications(message.roomID, true);
-      this.$nextTick(() => this.scrollToBottomOfChatPage());
       // ToDo: add notification sound
     },
 
