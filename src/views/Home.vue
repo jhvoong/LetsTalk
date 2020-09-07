@@ -188,19 +188,21 @@ export default Vue.extend({
         this.joinedRooms[
           this.indexOfCurrentViewedRoom
         ].roomIcon = this.currentViewedRoom.roomIcon;
-      } else {
-        roomDetails.messages.map((message: Message) => {
-          this.currentViewedRoom.messages.unshift(message);
-        });
-      }
 
-      this.$nextTick(() => this.scrollToBottomOfChatPage());
+        this.$nextTick(() => this.scrollToBottomOfChatPage());
+      } else {
+        for (let i = roomDetails.messages.length - 1; i >= 0; i--) {
+          this.currentViewedRoom.messages.unshift(roomDetails.messages[i]);
+        }
+
+        console.log(this.currentViewedRoom.messages);
+      }
     },
 
     onJoinRoom: function (joinedRoom: JoinedRoom) {
-      this.joinedRooms.unshift(joinedRoom);
-
-      if (this.currentViewedRoom.roomID === joinedRoom.roomID) {
+      if (joinedRoom.userID === this.userID) {
+        this.joinedRooms.unshift(joinedRoom);
+      } else if (this.currentViewedRoom.roomID === joinedRoom.roomID) {
         let message: string = joinedRoom.userID + " Rejected join request.";
         if (joinedRoom.joined) {
           message = joinedRoom.userID + " Accepted join request.";
@@ -244,6 +246,8 @@ export default Vue.extend({
           roomID: sentRequest.roomID,
           roomName: sentRequest.roomName,
         });
+
+        this.unreadNotificationsCount = this.joinRequests.length;
         return;
       } else if (this.currentViewedRoom.roomID == sentRequest.roomID) {
         this.currentViewedRoom.messages.push({
@@ -398,7 +402,10 @@ export default Vue.extend({
           break;
 
         case WSMessageType.RequestMessages:
-          this.showChatPage = true;
+          if (!this.showChatPage) {
+            this.showChatPage = true;
+          }
+
           this.onRequestMessages(jsonContent.roomPageDetails);
           break;
 

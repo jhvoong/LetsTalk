@@ -249,10 +249,11 @@ func (b Message) saveMessageContent() ([]string, error) {
 }
 
 // getPartitionedMessageInRoom retrieves messages for a particular room in the DB.
-// Retrieved messages are collected in partitions of 20s per room messages. Last message index is to
-// be sent by client so that the next recurring messages are fetched from database. If total message count in DB is say 30
-// It is assumed the client has load messages from index >=30 and want to fetch messages from index 10 to 20.
-// If index is a zero, the last 20 messages are retrieved.
+// Retrieved messages are collected in partitions of 20s per room messages. First message index received by client
+// is to be sent by client so that the next recurring messages are fetched from database. If total message count in DB is say 30
+// It is assumed that if the client has retrieved messages from index 30-50 where total message from room is 50
+// and want to fetch next count messages, mmessages from  index 10 to 30 is retrieved.
+// If FirstLoad is indicated, last 20 message count is retrieved.
 func (b *Room) getPartitionedMessageInRoom() error {
 	if b.FirstLoad {
 		messsageCountResult := db.Collection(values.RoomsCollectionName).
@@ -266,7 +267,7 @@ func (b *Room) getPartitionedMessageInRoom() error {
 	var messages []Message
 
 	result, err := db.Collection(values.MessageCollectionName).
-		Find(ctx, bson.M{"roomID": b.RoomID, "index": bson.M{"$gt": b.MessageCount - 19, "$lt": b.MessageCount + 1}})
+		Find(ctx, bson.M{"roomID": b.RoomID, "index": bson.M{"$gt": b.MessageCount - 19, "$lt": b.MessageCount + 1}}, options.Find().SetProjection(bson.M{"roomID": 0}))
 
 	if err != nil {
 		return err

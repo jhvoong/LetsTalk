@@ -4,7 +4,9 @@
       <v-app-bar tile flat height="100%" width="100%">
         <v-app-bar-nav-icon class="mx-5">
           <v-avatar>
-            <v-img :src="currentViewedRoom.roomIcon"></v-img>
+            <v-img
+              :src="currentViewedRoom.roomIcon?currentViewedRoom.roomIcon:require('../assets/unilag.svg')"
+            ></v-img>
           </v-avatar>
         </v-app-bar-nav-icon>
 
@@ -95,7 +97,7 @@
         style="height: 75vh;"
         fluid
       >
-        <v-row dense>
+        <v-row v-scroll:#messages="onScroll" dense>
           <v-col
             class="my-2"
             cols="12"
@@ -228,6 +230,19 @@ export default Vue.extend({
   }),
 
   methods: {
+    onScroll: function (e: { target: Element }) {
+      const messages = this.currentViewedRoom.messages;
+
+      if (
+        e.target &&
+        e.target.scrollTop < 40 &&
+        messages.length > 0 &&
+        messages[0].index >= 1
+      ) {
+        this.loadMoreMessages();
+      }
+    },
+
     sendMessage: function () {
       if (!this.messageContent.match(/\S/)) return;
 
@@ -249,9 +264,7 @@ export default Vue.extend({
         userID: this.userID,
         roomID: this.currentViewedRoom.roomID,
 
-        messageCount: this.currentViewedRoom.messages[
-          this.currentViewedRoom.messages.length - 1
-        ].index,
+        messageCount: this.currentViewedRoom.messages[0].index - 1,
       };
 
       this.sendWSMessage(JSON.stringify(message));
