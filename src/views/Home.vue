@@ -41,6 +41,7 @@
                         text
                         color="green"
                       >Join</v-btn>
+
                       <v-btn
                         @click="joinRoom(joinRequest.requestingUserID, joinRequest.roomID, joinRequest.roomName,false, index)"
                         text
@@ -112,9 +113,10 @@ import router from "@/router";
 
 import { WSMessageType, MessageType } from "./Constants";
 
-import SideBar from "../components/Sidebar.vue";
+import SideBar from "../components/SideBar.vue";
 import RoomsPage from "../components/RoomsPage.vue";
 import ChatPage from "../components/ChatPage.vue";
+
 import {
   JoinedRoom,
   RoomPageDetails,
@@ -186,13 +188,13 @@ export default Vue.extend({
         this.joinedRooms[
           this.indexOfCurrentViewedRoom
         ].roomIcon = this.currentViewedRoom.roomIcon;
-
-        return;
+      } else {
+        roomDetails.messages.map((message: Message) => {
+          this.currentViewedRoom.messages.unshift(message);
+        });
       }
 
-      roomDetails.messages.map((message: Message) => {
-        this.currentViewedRoom.messages.unshift(message);
-      });
+      this.$nextTick(() => this.scrollToBottomOfChatPage());
     },
 
     onJoinRoom: function (joinedRoom: JoinedRoom) {
@@ -217,7 +219,7 @@ export default Vue.extend({
     },
 
     onNewMessage: function (message: Message) {
-      this.recentChatPreview[message.roomID] = message.message;
+      this.updateRecentMessagePreview(message.roomID, message.message);
       if (this.currentViewedRoom.roomID === message.roomID) {
         this.updateRoomContentPage();
         this.currentViewedRoom.messages.push(message);
@@ -225,11 +227,16 @@ export default Vue.extend({
       }
 
       this.getUnreadNotifications(message.roomID, true);
-
-      // ToDo: add notification sound and also add sidebar preview of recent message.
+      this.$nextTick(() => this.scrollToBottomOfChatPage());
+      // ToDo: add notification sound
     },
 
     onSentRoomRequest: function (sentRequest: SentRoomRequest) {
+      const message =
+        sentRequest.userRequested +
+        " Was requested to join the room by " +
+        sentRequest.requesterID;
+
       if (this.userID === sentRequest.userRequested) {
         this.joinRequests.unshift({
           requestingUserName: sentRequest.requesterName,
@@ -237,12 +244,8 @@ export default Vue.extend({
           roomID: sentRequest.roomID,
           roomName: sentRequest.roomName,
         });
+        return;
       } else if (this.currentViewedRoom.roomID == sentRequest.roomID) {
-        const message =
-          sentRequest.userRequested +
-          " Was requested to join the room by " +
-          sentRequest.requesterID;
-
         this.currentViewedRoom.messages.push({
           type: MessageType.Info,
           message: message,
@@ -254,13 +257,22 @@ export default Vue.extend({
         });
 
         console.log("sent notification");
-      } else {
-        // ToDo: add sidebar message preview.
       }
+
+      this.updateRecentMessagePreview(sentRequest.roomID, message);
+    },
+
+    updateRecentMessagePreview: function (roomID: string, message: string) {
+      this.recentChatPreview[roomID] = message;
     },
 
     updateRoomContentPage: function () {
       this.$children[1].$forceUpdate();
+    },
+
+    scrollToBottomOfChatPage: function () {
+      const scrollHeight = this.$children[2].$el.querySelector("#messages");
+      if (scrollHeight) scrollHeight.scrollTop = scrollHeight.scrollHeight;
     },
 
     getUnreadNotifications: function (
@@ -286,7 +298,6 @@ export default Vue.extend({
 
     changeViewedRoomIndex: function (index: number) {
       this.indexOfCurrentViewedRoom = index;
-      console.log("removing", this.joinedRooms[index].roomID);
       this.getUnreadNotifications(this.joinedRooms[index].roomID, false);
     },
 

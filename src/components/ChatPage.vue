@@ -89,7 +89,12 @@
     </v-col>
 
     <v-col cols="12" style="height: 75vh;">
-      <v-container class="overflow-y-auto scroll-behavior-smooth" style="height: 75vh;" fluid>
+      <v-container
+        id="messages"
+        class="overflow-y-auto scroll-behavior-smooth"
+        style="height: 75vh;"
+        fluid
+      >
         <v-row dense>
           <v-col
             class="my-2"
