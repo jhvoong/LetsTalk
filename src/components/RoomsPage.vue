@@ -62,7 +62,7 @@
 
               <v-list-item-subtitle
                 class="d-inline-block text-truncate"
-              >This is text with nonesensejsjsjjsjsjsjsjsjsjkskskkskskksksk heads message</v-list-item-subtitle>
+              >{{recentChatPreview[joinedRoom.roomID]?recentChatPreview[joinedRoom.roomID]:""}}</v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>
         </v-list-item-group>

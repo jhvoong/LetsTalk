@@ -79,6 +79,7 @@
       <v-row v-else no-gutters>
         <v-col cols="3">
           <RoomsPage
+            :recentChatPreview="recentChatPreview"
             :changeViewedRoomIndex="changeViewedRoomIndex"
             :joinedRooms="joinedRooms"
             :sendWSMessage="sendWSMessage"
@@ -122,6 +123,7 @@ import {
   SentRoomRequest,
   FetchedUsers,
   UnreadRooms,
+  RecentChatPreview,
 } from "./Types";
 
 export default Vue.extend({
@@ -138,6 +140,7 @@ export default Vue.extend({
     joinRequests: [] as JoinRequest[],
     fetchedUsers: [] as FetchedUsers[],
     unreadRoomMessages: {} as UnreadRooms,
+    recentChatPreview: {} as RecentChatPreview,
 
     userID: store.state.email,
     newRoomName: "",
@@ -214,7 +217,9 @@ export default Vue.extend({
     },
 
     onNewMessage: function (message: Message) {
+      this.recentChatPreview[message.roomID] = message.message;
       if (this.currentViewedRoom.roomID === message.roomID) {
+        this.updateRoomContentPage();
         this.currentViewedRoom.messages.push(message);
         return;
       }

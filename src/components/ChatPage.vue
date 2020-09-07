@@ -91,7 +91,12 @@
     <v-col cols="12" style="height: 75vh;">
       <v-container class="overflow-y-auto scroll-behavior-smooth" style="height: 75vh;" fluid>
         <v-row dense>
-          <v-col cols="12" v-for="(message,index) in currentViewedRoom.messages" :key="index">
+          <v-col
+            class="my-2"
+            cols="12"
+            v-for="(message,index) in currentViewedRoom.messages"
+            :key="index"
+          >
             <template v-if="message.type===messageType.Message">
               <v-row dense align="end" justify="end" v-if="message.userID===userID">
                 <v-card
@@ -108,7 +113,7 @@
               </v-row>
 
               <v-row dense v-else>
-                <v-avatar style="align-self: flex-end;" rounded>
+                <v-avatar class="mx-2" style="align-self: flex-end;" rounded>
                   <v-img height="50px" width="50px" contain :src="require('../assets/unilag.svg')"></v-img>
                 </v-avatar>
                 <v-card flat :color="vuetify.framework.theme.dark?'':'#DCDCDC'" max-width="65%">

@@ -25,14 +25,6 @@ export interface SentRoomRequest extends RoomDetails {
     userRequested: string;
 }
 
-export interface RecentChatPreviewType extends RoomDetails {
-    truncatedMessage: string; // Truncated message should be < 10 characters
-}
-
-export interface RecentChatPreview {
-    [index: number]: RecentChatPreviewType;
-}
-
 export interface NewRoomRequest extends RoomDetails {
     requestingUserName: string;
     requestingUserID: string;
@@ -61,6 +53,10 @@ export interface Message {
 }
 
 export interface UsersIcon {
+    [index: string]: string;
+}
+
+export interface RecentChatPreview {
     [index: string]: string;
 }
 
