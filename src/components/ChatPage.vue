@@ -235,10 +235,11 @@ export default Vue.extend({
 
       if (
         e.target &&
-        e.target.scrollTop < 40 &&
+        e.target.scrollTop < 100 &&
         messages.length > 0 &&
-        messages[0].index >= 1
+        messages[0].index > 1
       ) {
+        console.log("still calling", messages);
         this.loadMoreMessages();
       }
     },

@@ -23,3 +23,9 @@ export const MessageType = {
     ClassSession: "ClassSession",
     ClassSessionLink: "ClassSessionLink",
 }
+
+export const JoinedRoomsFilter = {
+    All: "All",
+    Unread: "Unread",
+    Read: "Read",
+}

@@ -12,9 +12,26 @@
       </v-col>
 
       <v-col cols="12" class="text-center">
-        <v-btn outlined text rounded>All</v-btn>
-        <v-btn text rounded>Read</v-btn>
-        <v-btn text rounded>Unread</v-btn>
+        <v-btn
+          :outlined="currentRoomFilter==joinedRoomFilter.All"
+          @click="currentRoomFilter=joinedRoomFilter.All"
+          text
+          rounded
+        >{{joinedRoomFilter.All}}</v-btn>
+
+        <v-btn
+          :outlined="currentRoomFilter==joinedRoomFilter.Read"
+          @click="currentRoomFilter=joinedRoomFilter.Read"
+          text
+          rounded
+        >{{joinedRoomFilter.Read}}</v-btn>
+
+        <v-btn
+          :outlined="currentRoomFilter==joinedRoomFilter.Unread"
+          @click="currentRoomFilter=joinedRoomFilter.Unread"
+          text
+          rounded
+        >{{joinedRoomFilter.Unread}}</v-btn>
       </v-col>
 
       <v-col cols="12">
@@ -26,11 +43,11 @@
 
     <v-container style="max-height: 72vh;" class="overflow-y-auto" cols="12">
       <v-list nav tile dense three-line>
-        <v-list-item-group v-model="indexOfCurrentViewedRoom" mandatory>
+        <v-list-item-group v-model="roomIndex" mandatory>
           <v-list-item
-            v-for="(joinedRoom,index) in joinedRooms"
+            v-for="(joinedRoom,index) in filteredRooms"
             :key="index"
-            @click="loadChatContent(joinedRoom.roomID, index)"
+            @click="loadChatContent(joinedRoom.roomID)"
           >
             <v-list-item-avatar>
               <v-badge
@@ -77,7 +94,7 @@ import { Prop } from "vue/types/options";
 import store from "@/store";
 
 import { JoinedRoom, RecentChatPreview, UnreadRooms } from "../views/Types";
-import { WSMessageType } from "../views/Constants";
+import { WSMessageType, JoinedRoomsFilter } from "../views/Constants";
 
 export default Vue.extend({
   name: "RoomsPage",
@@ -95,10 +112,15 @@ export default Vue.extend({
 
   data: () => ({
     userID: store.state.email,
+    joinedRoomFilter: JoinedRoomsFilter,
+    currentRoomFilter: JoinedRoomsFilter.All,
+
+    roomIndex: 0,
+    filteredRooms: [] as JoinedRoom[],
   }),
 
   methods: {
-    loadChatContent: function (roomID: string, index: number) {
+    loadChatContent: function (roomID: string) {
       const message = {
         msgType: WSMessageType.RequestMessages,
         userID: this.userID,
@@ -107,7 +129,93 @@ export default Vue.extend({
       };
 
       this.sendWSMessage(JSON.stringify(message));
-      this.changeViewedRoomIndex(index);
+    },
+
+    filterRooms: function (retrieveOnlyUnread: boolean): JoinedRoom[] {
+      const joinedRooms: JoinedRoom[] = [];
+
+      this.joinedRooms.forEach((joinedRoom: JoinedRoom) => {
+        let isUnread = this.unreadRoomMessages[joinedRoom.roomID];
+        if (!isUnread) {
+          isUnread = false;
+        }
+        if (isUnread == retrieveOnlyUnread) {
+          joinedRooms.push(joinedRoom);
+        }
+      });
+
+      return joinedRooms;
+    },
+
+    roomFilterWatcher: function () {
+      switch (this.currentRoomFilter) {
+        case this.joinedRoomFilter.Unread:
+          this.filteredRooms = this.filterRooms(true);
+          return;
+        case this.joinedRoomFilter.Read:
+          this.filteredRooms = this.filterRooms(false);
+          return;
+      }
+
+      this.filteredRooms = this.joinedRooms;
+    },
+
+    getRoomIndex: function (
+      roomID: string,
+      joinedRooms: JoinedRoom[]
+    ): Promise<number> {
+      return new Promise((): number => {
+        for (let i = 0; i < joinedRooms.length; i++) {
+          if (joinedRooms[0].roomID === roomID) {
+            return i;
+          }
+        }
+
+        throw new Error("error, roomID not found");
+      });
+    },
+  },
+
+  watch: {
+    indexOfCurrentViewedRoom: function () {
+      // Change room index of filtered room if indexOfCurrentViewedRoom changes.
+      // indexOfCurrentViewedRoom tracks index of unfiltered room.
+      this.getRoomIndex(
+        this.joinedRooms[this.indexOfCurrentViewedRoom].roomID,
+        this.filteredRooms
+      )
+        .then((index: number) => {
+          this.roomIndex = index;
+        })
+        .catch(() => {
+          // This is assumed there is no rooms.
+          this.roomIndex = 0;
+        });
+    },
+
+    roomIndex: function () {
+      console.log("roomIndex");
+      this.getRoomIndex(
+        this.joinedRooms[this.indexOfCurrentViewedRoom].roomID,
+        this.joinedRooms
+      )
+        .then((index: number) => {
+          this.changeViewedRoomIndex(index);
+        })
+        .catch(() => {
+          // If room index is not allocated, we change to first index.
+          this.changeViewedRoomIndex(0);
+        });
+    },
+
+    joinedRooms: function () {
+      console.log("joinedRooms");
+      this.roomFilterWatcher();
+    },
+
+    currentRoomFilter: function () {
+      console.log("currentRoomFilter");
+      this.roomFilterWatcher();
     },
   },
 });

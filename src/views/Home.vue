@@ -229,7 +229,7 @@ export default Vue.extend({
         return;
       }
 
-      this.getUnreadNotifications(message.roomID, true);
+      this.changeNumberOfUnreadNotification(message.roomID, true);
       // ToDo: add notification sound
     },
 
@@ -279,30 +279,31 @@ export default Vue.extend({
       if (scrollHeight) scrollHeight.scrollTop = scrollHeight.scrollHeight;
     },
 
-    getUnreadNotifications: function (
+    changeNumberOfUnreadNotification: async function (
       roomID: string,
       addToUnreadNotifs: boolean
     ) {
-      return new Promise(() => {
-        this.unreadRoomMessages[roomID] = addToUnreadNotifs;
-        this.updateRoomContentPage();
+      this.unreadRoomMessages[roomID] = addToUnreadNotifs;
+      this.updateRoomContentPage();
 
-        let messageCount = 0;
-        for (const room in this.unreadRoomMessages) {
-          if (
-            this.unreadRoomMessages[room] &&
-            this.unreadRoomMessages[room] == true
-          )
-            messageCount++;
-        }
+      let messageCount = 0;
+      for (const room in this.unreadRoomMessages) {
+        if (
+          this.unreadRoomMessages[room] &&
+          this.unreadRoomMessages[room] == true
+        )
+          messageCount++;
+      }
 
-        this.unreadRoomMessageCount = messageCount;
-      });
+      this.unreadRoomMessageCount = messageCount;
     },
 
     changeViewedRoomIndex: function (index: number) {
       this.indexOfCurrentViewedRoom = index;
-      this.getUnreadNotifications(this.joinedRooms[index].roomID, false);
+      this.changeNumberOfUnreadNotification(
+        this.joinedRooms[index].roomID,
+        false
+      );
     },
 
     joinRoom: function (
