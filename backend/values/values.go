@@ -2,6 +2,7 @@ package values
 
 import (
 	"log"
+	"sync"
 
 	"github.com/pion/webrtc/v2"
 )
@@ -28,6 +29,7 @@ const (
 	RequestUsersToJoinRoomMsgType = "RequestUsersToJoinRoom"
 	SentRoomRequestMsgType        = "SentRoomRequest"
 	JoinRoomMsgType               = "JoinRoom"
+	OnlineStatusMsgType           = "OnlineStatus"
 
 	UploadFileErrorMsgType   = "UploadFileError" // UploadFileErrorMsgType is sent to client only.
 	UploadFileSuccessMsgType = "FileUploadSuccess"
@@ -46,7 +48,10 @@ const (
 
 var (
 	// MapEmailToName maps user email to name
-	MapEmailToName map[string]string
+	MapEmailToName = struct {
+		Mapper map[string]string
+		Mutex  sync.RWMutex
+	}{}
 
 	// PeerConnectionConfig contains peerconnection configuration
 	PeerConnectionConfig = webrtc.Configuration{

@@ -279,7 +279,9 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 
 	// Broadcast class session to room.
 	sdp.MsgType = values.MessageTypeClassSession
-	sdp.AuthorName = values.MapEmailToName[sdp.UserID]
+	values.MapEmailToName.Mutex.RLock()
+	sdp.AuthorName = values.MapEmailToName.Mapper[sdp.UserID]
+	values.MapEmailToName.Mutex.RUnlock()
 
 	jsonContent, err := json.Marshal(sdp)
 	if err != nil {

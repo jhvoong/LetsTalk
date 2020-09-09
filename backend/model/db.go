@@ -38,7 +38,7 @@ func InitDB() {
 		}
 	}()
 
-	values.MapEmailToName = make(map[string]string)
+	values.MapEmailToName.Mapper = make(map[string]string)
 
 	getCollection := func(collection string, content interface{}) {
 		result, err := db.Collection(collection).Find(ctx, bson.D{})
@@ -55,7 +55,9 @@ func InitDB() {
 	var users []User
 	getCollection(values.UsersCollectionName, &users)
 
+	values.MapEmailToName.Mutex.Lock()
 	for _, user := range users {
-		values.MapEmailToName[user.Email] = user.Name
+		values.MapEmailToName.Mapper[user.Email] = user.Name
 	}
+	values.MapEmailToName.Mutex.Unlock()
 }

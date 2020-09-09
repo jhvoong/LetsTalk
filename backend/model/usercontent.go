@@ -32,7 +32,9 @@ func (b User) CreateUser(r *http.Request) error {
 		return err
 	}
 
-	values.MapEmailToName[b.Email] = b.Name
+	values.MapEmailToName.Mutex.Lock()
+	values.MapEmailToName.Mapper[b.Email] = b.Name
+	values.MapEmailToName.Mutex.Unlock()
 	_, err = db.Collection(values.UsersCollectionName).InsertOne(ctx, b)
 	return err
 }
@@ -538,7 +540,8 @@ func GetUser(key string, user string) interface{} {
 		Email string `json:"userID"`
 	}, 0)
 
-	for email, name := range values.MapEmailToName {
+	values.MapEmailToName.Mutex.RLock()
+	for email, name := range values.MapEmailToName.Mapper {
 		if email == "" || email == user {
 			continue
 		}
@@ -552,6 +555,7 @@ func GetUser(key string, user string) interface{} {
 			})
 		}
 	}
+	values.MapEmailToName.Mutex.RUnlock()
 
 	return names
 }

@@ -459,7 +459,7 @@ func handleLoadUserContent(email string) {
 		"joinRequests": userInfo.JoinRequest,
 	}
 
-	if data, err := json.Marshal(request); err == nil && HubConstruct.Users[email] != nil {
+	if data, err := json.Marshal(request); err == nil {
 		HubConstruct.sendMessage(data, email)
 	}
 }
@@ -476,10 +476,11 @@ func broadcastOnlineStatusToAllUserRoom(userEmail string, online bool) {
 		return
 	}
 
+	values.MapEmailToName.Mutex.RLock()
 	for _, assassociateEmail := range associates {
-		nameAndEmail := fmt.Sprintf("%s (%s)", values.MapEmailToName[assassociateEmail], userEmail)
+		nameAndEmail := fmt.Sprintf("%s (%s)", values.MapEmailToName.Mapper[assassociateEmail], userEmail)
 		msg := map[string]interface{}{
-			"msgType":  "OnlineStatus",
+			"msgType":  values.OnlineStatusMsgType,
 			"username": nameAndEmail,
 			"status":   online,
 		}
@@ -488,4 +489,6 @@ func broadcastOnlineStatusToAllUserRoom(userEmail string, online bool) {
 			HubConstruct.sendMessage(data, assassociateEmail)
 		}
 	}
+
+	values.MapEmailToName.Mutex.RUnlock()
 }
