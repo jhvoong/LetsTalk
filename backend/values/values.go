@@ -50,7 +50,7 @@ var (
 	// MapEmailToName maps user email to name
 	MapEmailToName = struct {
 		Mapper map[string]string
-		Mutex  sync.RWMutex
+		Mutex  *sync.RWMutex
 	}{}
 
 	// PeerConnectionConfig contains peerconnection configuration

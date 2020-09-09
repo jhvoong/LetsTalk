@@ -45,11 +45,5 @@ func ServeWs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		log.Errorln("error upgrading websocket, err:", err)
 		return
 	}
-	c := &model.Connection{Send: make(chan []byte, 256), WS: ws}
-
-	s := model.Subscription{Conn: c, User: cookie.Email}
-	model.HubConstruct.Register <- s
-	log.Infoln("user", cookie.Email, "Connected")
-	go s.ReadPump(cookie.Email)
-	s.WritePump()
+	model.HubConstruct.RegisterWS(ws, cookie.Email)
 }

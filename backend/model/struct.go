@@ -118,37 +118,43 @@ type fileChunks struct {
 	ChunkIndex         int    `bson:"chunkIndex" json:"chunkIndex"`
 }
 
-type WSMessage struct {
-	Data []byte
-	User string
+type wsMessage struct {
+	data []byte
+	user string
 }
 
 // Connection is an middleman between the websocket connection and the hub.
-type Connection struct {
-	WS *websocket.Conn
+type connection struct {
+	ws *websocket.Conn
 
-	Send chan []byte
+	send chan []byte
 }
 
-type Subscription struct {
-	Conn *Connection
-	User string
+type subscription struct {
+	conn *connection
+	user string
 }
 
 // Hub maintains the set of active connections and broadcasts messages to the
 // connections.
-type Hub struct {
+type hub struct {
 	// Registered connections.
-	Users map[string]map[*Connection]bool
+	users      wsUsers
+	usersMutex *sync.RWMutex
 
 	// Inbound messages from the connections.
-	Broadcast chan WSMessage
+	broadcast chan wsMessage
 
 	// Register requests from the connections.
-	Register chan Subscription
+	register chan subscription
 
 	// Unregister requests from connections.
-	UnRegister chan Subscription
+	unRegister chan subscription
+}
+
+type wsUsers struct {
+	users map[string]map[*connection]bool
+	mutex *sync.RWMutex
 }
 
 // classSessionPeerConnections allows class session video calls where a publisher

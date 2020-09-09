@@ -2,8 +2,8 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -29,14 +29,28 @@ var Upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-var HubConstruct = Hub{
-	Broadcast:  make(chan WSMessage),
-	Register:   make(chan Subscription),
-	UnRegister: make(chan Subscription),
-	Users:      make(map[string]map[*Connection]bool),
+var HubConstruct = hub{
+	broadcast:  make(chan wsMessage),
+	register:   make(chan subscription),
+	unRegister: make(chan subscription),
+	users: wsUsers{
+		users: make(map[string]map[*connection]bool),
+		mutex: &sync.RWMutex{},
+	},
 }
 
-func (h *Hub) Run() {
+func (h *hub) RegisterWS(ws *websocket.Conn, email string) {
+	c := &connection{send: make(chan []byte, 256), ws: ws}
+
+	s := subscription{conn: c, user: email}
+	HubConstruct.register <- s
+	log.Infoln("user", email, "Connected")
+	go s.readPump(email)
+	go s.writePump()
+
+}
+
+func (h *hub) Run() {
 	Upgrader.CheckOrigin = func(r *http.Request) bool {
 		host := r.Header.Get("Origin")
 
@@ -55,66 +69,78 @@ func (h *Hub) Run() {
 
 	for {
 		select {
-		case s := <-h.Register:
-			connections := h.Users[s.User]
-			if connections == nil {
-				connections = make(map[*Connection]bool)
-				h.Users[s.User] = connections
-			}
-			h.Users[s.User][s.Conn] = true
-			fmt.Println("User registered")
-			go broadcastOnlineStatusToAllUserRoom(s.User, true)
+		case s := <-h.register:
+			h.users.mutex.Lock()
+			connections, exists := h.users.users[s.user]
 
-		case s := <-h.UnRegister:
-			connections := h.Users[s.User]
-			if connections != nil {
-				if _, ok := connections[s.Conn]; ok {
-					delete(connections, s.Conn)
-					close(s.Conn.Send)
+			if !exists {
+				connections = make(map[*connection]bool)
+
+				h.users.users[s.user] = connections
+			}
+
+			h.users.users[s.user][s.conn] = true
+
+			log.Infoln(s.user, "registered")
+			go broadcastOnlineStatusToAllUserRoom(s.user, true)
+			h.users.mutex.Unlock()
+
+		case s := <-h.unRegister:
+			h.users.mutex.Lock()
+			connections, exists := h.users.users[s.user]
+			if !exists {
+				if _, ok := connections[s.conn]; ok {
+					delete(connections, s.conn)
+					close(s.conn.send)
 					if len(connections) == 0 {
-						delete(h.Users, s.User)
-						go broadcastOnlineStatusToAllUserRoom(s.User, false)
-						fmt.Println(s.User, "offline")
+						delete(h.users.users, s.user)
+						go broadcastOnlineStatusToAllUserRoom(s.user, false)
+						log.Infoln(s.user, "offline")
 					}
-					fmt.Println(s.User, "subscription removed")
+					log.Infoln(s.user, "subscription removed")
 				}
 			}
+			h.users.mutex.Unlock()
 
-		case m := <-h.Broadcast:
-			connections := h.Users[m.User]
+		case m := <-h.broadcast:
+			h.users.mutex.RLock()
+			connections := h.users.users[m.user]
 			for c := range connections {
 				select {
-				case c.Send <- m.Data:
+				case c.send <- m.data:
 				default:
-					close(c.Send)
+					close(c.send)
 					delete(connections, c)
 					if len(connections) == 0 {
-						delete(h.Users, m.User)
-						go broadcastOnlineStatusToAllUserRoom(m.User, false)
+						h.users.mutex.Lock()
+						delete(h.users.users, m.user)
+						h.users.mutex.Unlock()
+						go broadcastOnlineStatusToAllUserRoom(m.user, false)
 					}
 				}
 			}
+			h.users.mutex.RUnlock()
 		}
 	}
 }
 
-func (h *Hub) sendMessage(msg []byte, user string) {
-	m := WSMessage{msg, user}
-	HubConstruct.Broadcast <- m
+func (h *hub) sendMessage(msg []byte, user string) {
+	m := wsMessage{msg, user}
+	HubConstruct.broadcast <- m
 }
 
 // WritePump pumps messages from the hub to the websocket connection.
-func (s *Subscription) WritePump() {
-	c := s.Conn
+func (s *subscription) writePump() {
+	c := s.conn
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.WS.Close()
+		c.ws.Close()
 	}()
 
 	for {
 		select {
-		case message, ok := <-c.Send:
+		case message, ok := <-c.send:
 			if !ok {
 				c.write(websocket.CloseMessage, []byte{})
 				return
@@ -133,45 +159,44 @@ func (s *Subscription) WritePump() {
 }
 
 // write writes a message with the given message type and payload.
-func (c *Connection) write(mt int, payload []byte) error {
-	if err := c.WS.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
+func (c *connection) write(mt int, payload []byte) error {
+	if err := c.ws.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
 		return err
 	}
 
-	return c.WS.WriteMessage(mt, payload)
+	return c.ws.WriteMessage(mt, payload)
 }
 
 // ReadPump pumps messages from the websocket connection to the hub.
-func (s Subscription) ReadPump(user string) {
-	c := s.Conn
+func (s subscription) readPump(user string) {
+	c := s.conn
 
 	defer func() {
-		HubConstruct.UnRegister <- s
-		c.WS.Close()
+		HubConstruct.unRegister <- s
+		c.ws.Close()
 	}()
 
-	c.WS.SetReadDeadline(time.Now().Add(pongWait))
+	c.ws.SetReadDeadline(time.Now().Add(pongWait))
 
-	c.WS.SetPongHandler(
+	c.ws.SetPongHandler(
 		func(string) error {
-			return c.WS.SetReadDeadline(time.Now().Add(pongWait))
+			return c.ws.SetReadDeadline(time.Now().Add(pongWait))
 		})
 
 	for {
 		var err error
 		var msg messageBytes
-		_, msg, err = c.WS.ReadMessage()
+		_, msg, err = c.ws.ReadMessage()
 
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-				log.Printf("error: %v\n", err)
+				log.Errorln("error: %v\n", err)
 			}
-			log.Println(err)
+			log.Errorln(err)
 
 			break
 		}
 
-		// TODO: Always enquire for userID.
 		data := struct {
 			MsgType    string `json:"msgType"`
 			User       string `json:"userID"`
