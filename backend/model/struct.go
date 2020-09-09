@@ -35,17 +35,17 @@ type User struct {
 	// ID should either be users matric or leading email stripping @....
 	Password         []byte        `bson:"password" json:"-"`
 	PasswordInString string        `bson:"-" json:"password"`
-	RoomsJoined      []RoomsJoined `bson:"roomsJoined" json:"roomsJoined"`
-	JoinRequest      []JoinRequest `bson:"joinRequest" json:"joinRequest"`
+	RoomsJoined      []roomsJoined `bson:"roomsJoined" json:"roomsJoined"`
+	JoinRequest      []joinRequest `bson:"joinRequest" json:"joinRequest"`
 	UUID             string        `bson:"loginUUID" json:"uuid"`
 }
 
-type RoomsJoined struct {
+type roomsJoined struct {
 	RoomID   string `bson:"roomID" json:"roomID"`
 	RoomName string `bson:"roomName" json:"roomName"`
 }
 
-type JoinRequest struct {
+type joinRequest struct {
 	RoomID             string   `bson:"_id" json:"roomID"`
 	RoomName           string   `bson:"roomName" json:"roomName"`
 	RequestingUserName string   `bson:"requestingUserName" json:"requestingUserName"`
@@ -57,7 +57,7 @@ type JoinRequest struct {
 // Message count is used to track amount of messages sent by users in room,
 // this helps with partitioning messages on retrieval, messages are retrieved in 20s on request.
 // FirstLoad is specified if user initially wants to retrieve room messages from frontend.
-type Room struct {
+type room struct {
 	RoomID          string    `bson:"_id" json:"roomID,omitempty"`
 	RoomName        string    `bson:"roomName" json:"roomName,omitempty"`
 	RoomIcon        string    `bson:"roomIcon" json:"roomIcon"`
@@ -83,7 +83,7 @@ type Message struct {
 	MessageType string `bson:"-" json:"msgType,omitempty"`
 }
 
-type Joined struct {
+type joined struct {
 	RoomID      string `json:"roomID"`
 	RoomName    string `json:"roomName"`
 	Email       string `json:"userID"`
@@ -92,14 +92,14 @@ type Joined struct {
 	MessageType string `bson:"-" json:"msgType"`
 }
 
-type NewRoomRequest struct {
+type newRoomRequest struct {
 	Email       string `json:"userID"`
 	RoomName    string `json:"roomName"`
 	MessageType string `bson:"-" json:"msgType"`
 }
 
 // File save files making sure they are distinct.
-type File struct {
+type file struct {
 	MsgType        string `bson:"-" json:"msgType,omitempty"`
 	UniqueFileHash string `bson:"_id" json:"fileHash"`
 	FileName       string `bson:"fileName" json:"fileName"`
@@ -109,7 +109,7 @@ type File struct {
 	Chunks         int    `bson:"chunks,omitempty" json:"chunks"`
 }
 
-type FileChunks struct {
+type fileChunks struct {
 	MsgType            string `bson:"-" json:"msgType,omitempty"`
 	FileName           string `bson:"-" json:"fileName,omitempty"`
 	UniqueFileHash     string `bson:"_id" json:"fileHash,omitempty"`

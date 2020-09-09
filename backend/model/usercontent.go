@@ -56,7 +56,7 @@ func (b *User) updateRoomsJoinedByUsers(roomID, roomName string) error {
 		return err
 	}
 
-	var roomJoined = RoomsJoined{RoomID: roomID, RoomName: roomName}
+	var roomJoined = roomsJoined{RoomID: roomID, RoomName: roomName}
 	b.RoomsJoined = append(b.RoomsJoined, roomJoined)
 
 	_, err := db.Collection(values.UsersCollectionName).UpdateOne(ctx, bson.M{"_id": b.Email},
@@ -95,7 +95,7 @@ func (b *User) getAllUsersAssociates() ([]string, error) {
 	}()
 
 	for _, roomJoined := range b.RoomsJoined {
-		var room Room
+		var room room
 		result := db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{
 			"_id": roomJoined.RoomID,
 		})
@@ -145,7 +145,7 @@ func (b User) exitRoom(roomID string) ([]string, error) {
 		return nil, err
 	}
 
-	room := Room{RoomID: roomID}
+	room := room{RoomID: roomID}
 	result := db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{"_id": room.RoomID})
 
 	if err := result.Decode(&room); err != nil {
@@ -217,7 +217,7 @@ func (b User) validateUser(uniqueID string) error {
 // saveMessageContent saves users messages to database.
 // Messages are stored using individual Insertion so that all message in room can be retrieved in partition.
 func (b Message) saveMessageContent() ([]string, error) {
-	var roomDetails Room
+	var roomDetails room
 
 	opts := options.FindOneAndUpdate().SetProjection(bson.M{"roomName": 0}).
 		SetReturnDocument(options.After)
@@ -256,7 +256,7 @@ func (b Message) saveMessageContent() ([]string, error) {
 // It is assumed that if the client has retrieved messages from index 30-50 where total message from room is 50
 // and want to fetch next count messages, mmessages from  index 10 to 30 is retrieved.
 // If FirstLoad is indicated, last 20 message count is retrieved.
-func (b *Room) getPartitionedMessageInRoom() error {
+func (b *room) getPartitionedMessageInRoom() error {
 	if b.FirstLoad {
 		messsageCountResult := db.Collection(values.RoomsCollectionName).
 			FindOne(ctx, bson.M{"_id": b.RoomID})
@@ -283,8 +283,8 @@ func (b *Room) getPartitionedMessageInRoom() error {
 	return nil
 }
 
-func (b NewRoomRequest) createNewRoom() (string, error) {
-	var chats Room
+func (b newRoomRequest) createNewRoom() (string, error) {
+	var chats room
 
 	chats.RoomID = uuid.New().String()
 	chats.RoomName = b.RoomName
@@ -313,7 +313,7 @@ func (b NewRoomRequest) createNewRoom() (string, error) {
 }
 
 // acceptRoomRequest accept room join request from a requesting user.
-func (b Joined) acceptRoomRequest() ([]string, error) {
+func (b joined) acceptRoomRequest() ([]string, error) {
 	result := db.Collection(values.UsersCollectionName).FindOne(ctx, bson.M{
 		"_id": b.Email,
 	})
@@ -338,7 +338,7 @@ func (b Joined) acceptRoomRequest() ([]string, error) {
 		return nil, values.ErrIllicitJoinRequest
 	}
 
-	var messages Room
+	var messages room
 	result = db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{
 		"_id": b.RoomID,
 	})
@@ -382,7 +382,7 @@ func (b Joined) acceptRoomRequest() ([]string, error) {
 
 	// Save rooms joined by user to user collection.
 	if b.Joined {
-		user.RoomsJoined = append(user.RoomsJoined, RoomsJoined{RoomID: b.RoomID, RoomName: b.RoomName})
+		user.RoomsJoined = append(user.RoomsJoined, roomsJoined{RoomID: b.RoomID, RoomName: b.RoomName})
 
 		_, err = db.Collection(values.UsersCollectionName).UpdateOne(ctx, bson.M{"_id": b.Email},
 			bson.M{"$set": bson.M{"joinRequest": user.JoinRequest, "roomsJoined": user.RoomsJoined}})
@@ -396,8 +396,8 @@ func (b Joined) acceptRoomRequest() ([]string, error) {
 }
 
 // requestUserToJoinRoom confirms sends join request to user.
-func (b JoinRequest) requestUserToJoinRoom(userToJoinEmail string) ([]string, error) {
-	var room Room
+func (b joinRequest) requestUserToJoinRoom(userToJoinEmail string) ([]string, error) {
+	var room room
 	result := db.Collection(values.RoomsCollectionName).FindOne(ctx, bson.M{"_id": b.RoomID})
 
 	if err := result.Decode(&room); err != nil {
@@ -456,7 +456,7 @@ func (b JoinRequest) requestUserToJoinRoom(userToJoinEmail string) ([]string, er
 // UploadNewFile create a NewFile content to database and returns file content if one
 // has already been created.
 // Chunks is set to zero so that if user wants to retrieve
-func (b *File) uploadNewFile() error {
+func (b *file) uploadNewFile() error {
 	result := db.Collection(values.FilesCollectionName).FindOne(ctx, bson.M{"_id": b.UniqueFileHash}) //, b, options.FindOneAndReplace().SetUpsert(true))
 
 	if result.Err() == mongo.ErrNoDocuments {
@@ -471,12 +471,12 @@ func (b *File) uploadNewFile() error {
 	return nil
 }
 
-func (b *File) retrieveFileInformation() error {
+func (b *file) retrieveFileInformation() error {
 	result := db.Collection(values.FilesCollectionName).FindOne(ctx, bson.M{"_id": b.UniqueFileHash})
 	return result.Decode(&b)
 }
 
-func (b FileChunks) fileChunkExists() bool {
+func (b fileChunks) fileChunkExists() bool {
 	result := db.Collection(values.FileChunksCollectionName).FindOne(ctx, bson.M{"_id": b.UniqueFileHash})
 	if err := result.Err(); err == nil {
 		return true
@@ -484,7 +484,7 @@ func (b FileChunks) fileChunkExists() bool {
 	return false
 }
 
-func (b FileChunks) addFileChunk() error {
+func (b fileChunks) addFileChunk() error {
 	result := db.Collection(values.FileChunksCollectionName).
 		FindOneAndReplace(ctx, bson.M{"_id": b.UniqueFileHash}, b, options.FindOneAndReplace().SetUpsert(true))
 
@@ -498,7 +498,7 @@ func (b FileChunks) addFileChunk() error {
 	return result.Err()
 }
 
-func (b *FileChunks) retrieveFileChunk() error {
+func (b *fileChunks) retrieveFileChunk() error {
 	result := db.Collection(values.FileChunksCollectionName).
 		FindOne(ctx, bson.M{"compressedFileHash": b.CompressedFileHash, "chunkIndex": b.ChunkIndex})
 
@@ -534,7 +534,7 @@ func uploadFileGridFS(fileName string) error {
 	return nil
 }
 
-func GetUser(key string, user string) interface{} {
+func getUser(key string, user string) interface{} {
 	names := make([]struct {
 		Name  string `json:"name"`
 		Email string `json:"userID"`

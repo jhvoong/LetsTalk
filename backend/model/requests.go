@@ -18,7 +18,7 @@ type messageBytes []byte
 
 // handleCreateNewRoom creates a new room for user.
 func (msg messageBytes) handleCreateNewRoom() {
-	var newRoom NewRoomRequest
+	var newRoom newRoomRequest
 	if err := json.Unmarshal(msg, &newRoom); err != nil {
 		log.Errorln("could not convert to required New Room Request struct")
 		return
@@ -31,7 +31,7 @@ func (msg messageBytes) handleCreateNewRoom() {
 	}
 
 	// Broadcast a joined message.
-	userJoinedMessage := Joined{
+	userJoinedMessage := joined{
 		RoomID:      roomID,
 		Email:       newRoom.Email,
 		RoomName:    newRoom.RoomName,
@@ -48,7 +48,7 @@ func (msg messageBytes) handleCreateNewRoom() {
 }
 
 func (msg messageBytes) handleRequestUserToJoinRoom() {
-	var request JoinRequest
+	var request joinRequest
 	if err := json.Unmarshal(msg, &request); err != nil {
 		log.Errorln("could not convert to required Joined Request struct, err:", err)
 		return
@@ -91,7 +91,7 @@ func (msg messageBytes) handleRequestUserToJoinRoom() {
 
 // handleUserAcceptRoomRequest accepts room join request.
 func (msg messageBytes) handleUserAcceptRoomRequest() {
-	var roomRequest Joined
+	var roomRequest joined
 	if err := json.Unmarshal(msg, &roomRequest); err != nil {
 		log.Errorln("could not convert to required Join Room Request struct, err:", err)
 		return
@@ -110,29 +110,29 @@ func (msg messageBytes) handleUserAcceptRoomRequest() {
 
 // handleRequestAllMessages fetches messages given the specified message room ID.
 func (msg messageBytes) handleRequestMessages(user string) {
-	room := Room{}
-	if err := json.Unmarshal(msg, &room); err != nil {
+	roomContent := room{}
+	if err := json.Unmarshal(msg, &roomContent); err != nil {
 		log.Errorln("could not unmarshall file on handle request partitioned message, err:", err)
 		return
 	}
 
-	if err := room.getPartitionedMessageInRoom(); err != nil {
+	if err := roomContent.getPartitionedMessageInRoom(); err != nil {
 		log.Errorln("could not get all messages in room, err:", err)
 		return
 	}
 
 	// Strip off unnecessary message information sent to server.
-	for index := range room.Messages {
-		room.Messages[index].RoomID = ""
+	for index := range roomContent.Messages {
+		roomContent.Messages[index].RoomID = ""
 	}
-	room.RoomIcon = ""
+	roomContent.RoomIcon = ""
 
 	data := struct {
 		MsgType     string `json:"msgType"`
-		RoomContent Room   `json:"roomPageDetails"`
+		RoomContent room   `json:"roomPageDetails"`
 	}{
 		values.RequestMessages,
-		room,
+		roomContent,
 	}
 
 	jsonContent, err := json.Marshal(&data)
@@ -208,7 +208,7 @@ func (msg messageBytes) handleExitRoom(author string) {
 // next chunk could be the next preceding file chunk if another user has uploaded file content.
 // If file upload error, send back error message to user
 func (msg messageBytes) handleNewFileUpload() {
-	file := File{}
+	file := file{}
 	if err := json.Unmarshal(msg, &file); err != nil {
 		log.Println(err)
 		return
@@ -269,7 +269,7 @@ func (msg messageBytes) handleUploadFileChunk() {
 		return
 	}
 
-	file := FileChunks{
+	file := fileChunks{
 		UniqueFileHash:     data.NewChunkHash,
 		FileBinary:         data.File,
 		ChunkIndex:         data.ChunkIndex,
@@ -282,7 +282,7 @@ func (msg messageBytes) handleUploadFileChunk() {
 	if data.RecentChunkHash == "" {
 		recentFileExist = true
 	} else {
-		recentFileExist = FileChunks{UniqueFileHash: data.RecentChunkHash}.fileChunkExists()
+		recentFileExist = fileChunks{UniqueFileHash: data.RecentChunkHash}.fileChunkExists()
 	}
 
 	data.RecentChunkHash, data.File, data.NewChunkHash = "", "", ""
@@ -376,7 +376,7 @@ func (msg messageBytes) handleUploadFileUploadComplete() {
 }
 
 func (msg messageBytes) handleRequestDownload(author string) {
-	file := File{}
+	file := file{}
 	if err := json.Unmarshal(msg, &file); err != nil {
 		log.Println(err)
 		return
@@ -398,7 +398,7 @@ func (msg messageBytes) handleRequestDownload(author string) {
 }
 
 func (msg messageBytes) handleFileDownload(author string) {
-	file := FileChunks{}
+	file := fileChunks{}
 	if err := json.Unmarshal(msg, &file); err != nil {
 		log.Errorln("error unmarshalling on handle file download, err:", err)
 		return
@@ -409,7 +409,7 @@ func (msg messageBytes) handleFileDownload(author string) {
 	if err := file.retrieveFileChunk(); err != nil {
 		log.Println("error retrieving file", err)
 		// Send download file error message to client so as to stop download.
-		file = FileChunks{}
+		file = fileChunks{}
 		file.MsgType = values.DownloadFileErrorMsgType
 	} else {
 		file.MsgType = values.DownloadFileChunkMsgType
@@ -431,7 +431,7 @@ func handleSearchUser(searchText, user string) {
 		UsersFound interface{} `json:"fetchedUsers"`
 		MsgType    string      `json:"msgType"`
 	}{
-		GetUser(searchText, user),
+		getUser(searchText, user),
 		values.SearchUserMsgType,
 	}
 
