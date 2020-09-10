@@ -71,10 +71,9 @@ func (h *hub) Run() {
 		select {
 		case s := <-h.register:
 			h.users.mutex.Lock()
-			connections, exists := h.users.users[s.user]
 
-			if !exists {
-				connections = make(map[*connection]bool)
+			if _, exists := h.users.users[s.user]; !exists {
+				connections := make(map[*connection]bool)
 
 				h.users.users[s.user] = connections
 			}
@@ -88,7 +87,7 @@ func (h *hub) Run() {
 		case s := <-h.unRegister:
 			h.users.mutex.Lock()
 			connections, exists := h.users.users[s.user]
-			if !exists {
+			if exists {
 				if _, ok := connections[s.conn]; ok {
 					delete(connections, s.conn)
 					close(s.conn.send)
@@ -190,11 +189,10 @@ func (s subscription) readPump(user string) {
 
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-				log.Errorln("error: %v\n", err)
+				log.Errorln("error: ", err)
 			}
-			log.Errorln(err)
 
-			break
+			return
 		}
 
 		data := struct {

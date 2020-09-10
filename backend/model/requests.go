@@ -97,6 +97,10 @@ func (msg messageBytes) handleUserAcceptRoomRequest() {
 		return
 	}
 
+	values.MapEmailToName.Mutex.RLock()
+	roomRequest.Name = values.MapEmailToName.Mapper[roomRequest.Email]
+	values.MapEmailToName.Mutex.RUnlock()
+
 	users, err := roomRequest.acceptRoomRequest()
 	if err != nil {
 		log.Errorln("could not accept room request", err)
@@ -121,7 +125,7 @@ func (msg messageBytes) handleRequestMessages(user string) {
 		return
 	}
 
-	// Strip off unnecessary message information sent to server.
+	// Strip off unnecessary message information sent to serverDB.
 	for index := range roomContent.Messages {
 		roomContent.Messages[index].RoomID = ""
 	}
@@ -453,10 +457,27 @@ func handleLoadUserContent(email string) {
 		return
 	}
 
+	usersAssociate, err := userInfo.getAllUsersAssociates()
+	if err != nil {
+		log.Errorln("error getting users associates in handleLoadUserContent, err:", err)
+		return
+	}
+
+	HubConstruct.users.mutex.RLock()
+	values.MapEmailToName.Mutex.RLock()
+	isUserOnline := make(map[string]associateStatus)
+	for _, associate := range usersAssociate {
+		_, isOnline := HubConstruct.users.users[associate]
+		isUserOnline[associate] = associateStatus{Name: values.MapEmailToName.Mapper[associate], IsOnline: isOnline}
+	}
+	values.MapEmailToName.Mutex.RUnlock()
+	HubConstruct.users.mutex.RUnlock()
+
 	request := map[string]interface{}{
-		"msgType":      "WebsocketOpen",
+		"msgType":      values.WebsocketOpenMsgType,
 		"joinedRooms":  userInfo.RoomsJoined,
 		"joinRequests": userInfo.JoinRequest,
+		"associates":   isUserOnline,
 	}
 
 	if data, err := json.Marshal(request); err == nil {
@@ -465,9 +486,6 @@ func handleLoadUserContent(email string) {
 }
 
 // broadcastOnlineStatusToAllUserRoom broadcasts users availability status to all users joined rooms.
-// Status are broadcasted timely.
-// Since we are calling broadcastOnlineStatusToAllUserRoom from HubRun, we should call it in a goroutine so as
-// not to block the hub channel
 func broadcastOnlineStatusToAllUserRoom(userEmail string, online bool) {
 	user := User{Email: userEmail}
 	associates, err := user.getAllUsersAssociates()
@@ -478,11 +496,10 @@ func broadcastOnlineStatusToAllUserRoom(userEmail string, online bool) {
 
 	values.MapEmailToName.Mutex.RLock()
 	for _, assassociateEmail := range associates {
-		nameAndEmail := fmt.Sprintf("%s (%s)", values.MapEmailToName.Mapper[assassociateEmail], userEmail)
 		msg := map[string]interface{}{
-			"msgType":  values.OnlineStatusMsgType,
-			"username": nameAndEmail,
-			"status":   online,
+			"msgType": values.OnlineStatusMsgType,
+			"userID":  userEmail,
+			"status":  online,
 		}
 
 		if data, err := json.Marshal(msg); err == nil {

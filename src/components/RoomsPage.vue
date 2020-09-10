@@ -157,6 +157,7 @@ export default Vue.extend({
           return;
       }
 
+      console.log("all was selected");
       this.filteredRooms = this.joinedRooms;
     },
 
@@ -217,6 +218,10 @@ export default Vue.extend({
       console.log("currentRoomFilter");
       this.roomFilterWatcher();
     },
+  },
+
+  created() {
+    this.filteredRooms = this.joinedRooms;
   },
 });
 </script>

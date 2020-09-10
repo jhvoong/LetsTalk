@@ -91,6 +91,7 @@
 
         <v-col cols="9">
           <ChatPage
+            :associates="usersOnline"
             v-if="showChatPage"
             :clearFetchedUsers="clearFetchedUsers"
             :fetchedUsers="fetchedUsers"
@@ -127,6 +128,7 @@ import {
   FetchedUsers,
   UnreadRooms,
   RecentChatPreview,
+  UsersOnline,
 } from "./Types";
 
 export default Vue.extend({
@@ -144,6 +146,7 @@ export default Vue.extend({
     fetchedUsers: [] as FetchedUsers[],
     unreadRoomMessages: {} as UnreadRooms,
     recentChatPreview: {} as RecentChatPreview,
+    usersOnline: {} as UsersOnline,
 
     userID: store.state.email,
     newRoomName: "",
@@ -180,6 +183,7 @@ export default Vue.extend({
 
     onRequestMessages: function (roomDetails: RoomPageDetails) {
       if (roomDetails.firstLoad) {
+        console.log(roomDetails.registeredUsers);
         this.currentViewedRoom = roomDetails;
         if (!this.currentViewedRoom.messages) {
           this.currentViewedRoom.messages = [];
@@ -202,6 +206,7 @@ export default Vue.extend({
       if (joinedRoom.userID === this.userID) {
         this.joinedRooms.unshift(joinedRoom);
         this.indexOfCurrentViewedRoom++;
+        return;
       } else if (this.currentViewedRoom.roomID === joinedRoom.roomID) {
         let message: string = joinedRoom.userID + " Rejected join request.";
         if (joinedRoom.joined) {
@@ -218,6 +223,11 @@ export default Vue.extend({
           index: 0,
         });
       }
+
+      this.usersOnline[joinedRoom.userID] = {
+        name: joinedRoom.name,
+        isOnline: true,
+      };
     },
 
     onNewMessage: function (message: Message) {
@@ -272,6 +282,10 @@ export default Vue.extend({
 
     updateRoomContentPage: function () {
       this.$children[1].$forceUpdate();
+    },
+
+    updateChatRoomPage: function () {
+      this.$children[2].$forceUpdate();
     },
 
     scrollToBottomOfChatPage: function () {
@@ -384,6 +398,7 @@ export default Vue.extend({
 
     socket.onmessage = (event: MessageEvent) => {
       const jsonContent = JSON.parse(event.data);
+      console.log("Received");
 
       switch (jsonContent.msgType) {
         case WSMessageType.UnauthorizedAccess:
@@ -400,6 +415,7 @@ export default Vue.extend({
             jsonContent.joinedRooms,
             jsonContent.joinRequests
           );
+          this.usersOnline = jsonContent.associates;
           break;
 
         case WSMessageType.RequestMessages:
@@ -421,6 +437,17 @@ export default Vue.extend({
         case WSMessageType.SentRoomRequest:
           this.onSentRoomRequest(jsonContent);
           break;
+
+        case WSMessageType.OnlineStatus:
+          console.log(jsonContent.userID, this.usersOnline);
+          if (this.usersOnline[jsonContent.userID]) {
+            this.usersOnline[jsonContent.userID].isOnline = jsonContent.status;
+            console.log("updated");
+            if (this.showChatPage) {
+              console.log("final update");
+              this.$nextTick(this.updateChatRoomPage);
+            }
+          }
       }
     };
 

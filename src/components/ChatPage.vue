@@ -20,11 +20,7 @@
           v-model="showAddUsersDialog"
           left
           rounded="r-xl"
-          open-on-hover
           :close-on-content-click="false"
-          append-icon="mdi-magnify"
-          @keyup.enter.exact="searchUsers"
-          @click:append="searchUsers"
           nudge-width="400"
           offset-y
         >
@@ -81,12 +77,59 @@
           </v-card>
         </v-menu>
 
-        <v-btn class="mx-2" @click="startSession()" icon x-large>
+        <v-btn class="mx-2" icon x-large>
           <v-icon>mdi-video</v-icon>
         </v-btn>
-        <v-btn class="mx-2" @click="startSession()" icon x-large>
-          <v-icon>mdi-information</v-icon>
-        </v-btn>
+
+        <v-menu
+          v-model="showOnlineUsersDialog"
+          left
+          :close-on-content-click="false"
+          rounded="r-xl"
+          nudge-width="400"
+          offset-y
+        >
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn class="mx-2" v-bind="attrs" v-on="on" icon x-large>
+              <v-icon>mdi-information</v-icon>
+            </v-btn>
+          </template>
+
+          <v-card>
+            <v-row class="mx-10">
+              <v-col cols="12"></v-col>
+              <v-col
+                cols="12"
+                v-for="(onlineUser,index) in currentViewedRoom.registeredUsers"
+                :key="index"
+              >
+                <template v-if="onlineUser==userID">
+                  <v-badge inline dot color="green"></v-badge>
+                  <span class="mx-4">
+                    <b>You</b>
+                  </span>
+                </template>
+
+                <template v-else>
+                  <v-badge
+                    inline
+                    dot
+                    :color="associates[onlineUser]&&associates[onlineUser].isOnline===true ? 'green' : 'red'"
+                  ></v-badge>
+                  <span class="mx-4">
+                    <b>{{associates[onlineUser]?associates[onlineUser].name:""}} [{{onlineUser}}]</b>
+                  </span>
+                </template>
+              </v-col>
+            </v-row>
+
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn @click="closeAddUserDialog" color="red" text>exit room</v-btn>
+              <v-spacer></v-spacer>
+            </v-card-actions>
+          </v-card>
+        </v-menu>
       </v-app-bar>
     </v-col>
 
@@ -200,7 +243,7 @@ import vuetify from "@/plugins/vuetify";
 import { Prop } from "vue/types/options";
 import store from "@/store";
 
-import { RoomPageDetails, FetchedUsers } from "../views/Types";
+import { RoomPageDetails, FetchedUsers, UsersOnline } from "../views/Types";
 import { WSMessageType, MessageType } from "../views/Constants";
 
 export default Vue.extend({
@@ -209,6 +252,7 @@ export default Vue.extend({
   props: {
     currentViewedRoom: {} as Prop<RoomPageDetails>,
     fetchedUsers: Array as Prop<FetchedUsers[]>,
+    associates: {} as Prop<UsersOnline>,
 
     sendWSMessage: Function,
     clearFetchedUsers: Function,
@@ -221,6 +265,7 @@ export default Vue.extend({
     searchUserName: "",
 
     showAddUsersDialog: false,
+    showOnlineUsersDialog: false,
 
     selectedUsersToAddToRoom: [] as string[],
 
@@ -232,14 +277,12 @@ export default Vue.extend({
   methods: {
     onScroll: function (e: { target: Element }) {
       const messages = this.currentViewedRoom.messages;
-
       if (
         e.target &&
         e.target.scrollTop < 100 &&
         messages.length > 0 &&
         messages[0].index > 1
       ) {
-        console.log("still calling", messages);
         this.loadMoreMessages();
       }
     },

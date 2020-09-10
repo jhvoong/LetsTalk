@@ -38,8 +38,6 @@ func InitDB() {
 		}
 	}()
 
-	values.MapEmailToName.Mapper = make(map[string]string)
-
 	getCollection := func(collection string, content interface{}) {
 		result, err := db.Collection(collection).Find(ctx, bson.D{})
 		if err != nil {

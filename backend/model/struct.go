@@ -67,6 +67,11 @@ type room struct {
 	FirstLoad       bool      `bson:"-" json:"firstLoad,omitempty"`
 }
 
+type associateStatus struct {
+	Name     string `json:"name"`
+	IsOnline bool   `json:"isOnline"`
+}
+
 // Message struct defines user message contents, size and hash is defined if user is sending files.
 // Index is used to track message count as to Rooms messages, this should help with partitioning if we
 // are to retrieve message of a particular count.
@@ -87,6 +92,7 @@ type joined struct {
 	RoomID      string `json:"roomID"`
 	RoomName    string `json:"roomName"`
 	Email       string `json:"userID"`
+	Name        string `json:"name"`
 	RequesterID string `json:"requesterID"`
 	Joined      bool   `json:"joined"`
 	MessageType string `bson:"-" json:"msgType"`
@@ -139,8 +145,7 @@ type subscription struct {
 // connections.
 type hub struct {
 	// Registered connections.
-	users      wsUsers
-	usersMutex *sync.RWMutex
+	users wsUsers
 
 	// Inbound messages from the connections.
 	broadcast chan wsMessage

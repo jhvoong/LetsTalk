@@ -7,6 +7,7 @@ export interface JoinedRoom extends RoomDetails {
     roomIcon: string;
     joined: boolean;
     userID: string;
+    name: string;
 }
 
 export interface JoinRequest extends RoomDetails {
@@ -52,6 +53,11 @@ export interface Message {
     index: number;
 }
 
+export interface AssociateStatus {
+    name: string;
+    isOnline: boolean;
+}
+
 export interface UsersIcon {
     [index: string]: string;
 }
@@ -61,7 +67,7 @@ export interface RecentChatPreview {
 }
 
 export interface UsersOnline {
-    [index: string]: boolean;
+    [index: string]: AssociateStatus;
 }
 
 export interface UnreadRooms {

@@ -47,11 +47,15 @@ const (
 )
 
 var (
-	// MapEmailToName maps user email to name
+	// MapEmailToName retrieve user registered name if given an email.
+	// MapEmailToName is concurrent safe as it uses a mutex lock.
 	MapEmailToName = struct {
 		Mapper map[string]string
 		Mutex  *sync.RWMutex
-	}{}
+	}{
+		make(map[string]string),
+		&sync.RWMutex{},
+	}
 
 	// PeerConnectionConfig contains peerconnection configuration
 	PeerConnectionConfig = webrtc.Configuration{
