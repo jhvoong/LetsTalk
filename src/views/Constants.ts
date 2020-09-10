@@ -8,7 +8,8 @@ export const WSMessageType = {
     SearchUser: "SearchUser",
     RequestUsersToJoinRoom: "RequestUsersToJoinRoom",
     SentRoomRequest: "SentRoomRequest",
-    OnlineStatus: "OnlineStatus"
+    OnlineStatus: "OnlineStatus",
+    ExitRoom: "ExitRoom",
 }
 
 export const SideBarOptions = {

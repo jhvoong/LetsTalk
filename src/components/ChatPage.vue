@@ -125,7 +125,7 @@
 
             <v-card-actions>
               <v-spacer></v-spacer>
-              <v-btn @click="closeAddUserDialog" color="red" text>exit room</v-btn>
+              <v-btn @click="exitRoom" color="red" text>exit room</v-btn>
               <v-spacer></v-spacer>
             </v-card-actions>
           </v-card>
@@ -343,6 +343,17 @@ export default Vue.extend({
       this.selectedUsersToAddToRoom = [];
       this.showAddUsersDialog = false;
       this.clearFetchedUsers();
+    },
+
+    exitRoom: function () {
+      const message = {
+        msgType: WSMessageType.ExitRoom,
+        roomID: this.currentViewedRoom.roomID,
+        userID: this.userID,
+      };
+
+      this.sendWSMessage(JSON.stringify(message));
+      this.showOnlineUsersDialog = false;
     },
   },
 });

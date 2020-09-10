@@ -179,23 +179,19 @@ func (msg messageBytes) handleNewMessage() {
 // handleExitRoom exits requesters joined room and also notifies all room users.
 func (msg messageBytes) handleExitRoom(author string) {
 	data := struct {
-		Email  string `json:"email"`
+		Email  string `json:"userID"`
 		RoomID string `json:"roomID"`
 	}{}
 
 	if err := json.Unmarshal(msg, &data); err != nil {
-		log.Println("Could not retrieve json on exit room request", err)
-		return
-	}
-
-	if author != data.Email {
+		log.Errorln("could not retrieve json on exit room request", err)
 		return
 	}
 
 	user := User{Email: data.Email}
 	registeredUsers, err := user.exitRoom(data.RoomID)
 	if err != nil {
-		log.Println("Error exiting room", err)
+		log.Errorln("error exiting room", err)
 		return
 	}
 

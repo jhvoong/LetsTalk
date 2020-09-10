@@ -53,6 +53,11 @@ export interface Message {
     index: number;
 }
 
+export interface ExitRoomDetails {
+    roomID: string;
+    userID: string;
+}
+
 export interface AssociateStatus {
     name: string;
     isOnline: boolean;

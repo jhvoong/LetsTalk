@@ -129,6 +129,7 @@ import {
   UnreadRooms,
   RecentChatPreview,
   UsersOnline,
+  ExitRoomDetails,
 } from "./Types";
 
 export default Vue.extend({
@@ -189,12 +190,11 @@ export default Vue.extend({
           this.currentViewedRoom.messages = [];
         }
 
-        console.log(this.joinedRooms.length, this.indexOfCurrentViewedRoom);
         this.joinedRooms[
           this.indexOfCurrentViewedRoom
         ].roomIcon = this.currentViewedRoom.roomIcon;
 
-        this.$nextTick(() => this.scrollToBottomOfChatPage());
+        this.$nextTick(this.scrollToBottomOfChatPage);
       } else {
         for (let i = roomDetails.messages.length - 1; i >= 0; i--) {
           this.currentViewedRoom.messages.unshift(roomDetails.messages[i]);
@@ -220,7 +220,7 @@ export default Vue.extend({
           userID: "",
           roomID: "",
           message: message,
-          index: 0,
+          index: this.currentViewedRoom.messages.length,
         });
       }
 
@@ -235,7 +235,7 @@ export default Vue.extend({
       if (this.currentViewedRoom.roomID === message.roomID) {
         this.updateRoomContentPage();
         this.currentViewedRoom.messages.push(message);
-        this.$nextTick(() => this.scrollToBottomOfChatPage());
+        this.$nextTick(this.scrollToBottomOfChatPage);
         return;
       }
 
@@ -267,13 +267,33 @@ export default Vue.extend({
           name: "",
           userID: "",
           roomID: "",
-          index: 0,
+          index: this.currentViewedRoom.messages.length,
         });
 
         console.log("sent notification");
       }
 
       this.updateRecentMessagePreview(sentRequest.roomID, message);
+    },
+
+    onExitRoom: function (exitRoom: ExitRoomDetails) {
+      console.log(exitRoom);
+      const message: Message = {
+        time: "",
+        name: "",
+        type: MessageType.Info,
+        userID: "",
+        roomID: "",
+        message: "You left the room.",
+        index: this.currentViewedRoom.messages.length,
+      };
+
+      if (exitRoom.roomID == this.currentViewedRoom.roomID) {
+        if (exitRoom.userID != this.userID)
+          message.message = exitRoom.userID + " Left the room.";
+
+        this.currentViewedRoom.messages.push(message);
+      }
     },
 
     updateRecentMessagePreview: function (roomID: string, message: string) {
@@ -439,7 +459,6 @@ export default Vue.extend({
           break;
 
         case WSMessageType.OnlineStatus:
-          console.log(jsonContent.userID, this.usersOnline);
           if (this.usersOnline[jsonContent.userID]) {
             this.usersOnline[jsonContent.userID].isOnline = jsonContent.status;
             console.log("updated");
@@ -448,6 +467,11 @@ export default Vue.extend({
               this.$nextTick(this.updateChatRoomPage);
             }
           }
+          break;
+
+        case WSMessageType.ExitRoom:
+          this.onExitRoom(jsonContent);
+          break;
       }
     };
 
