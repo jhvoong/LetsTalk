@@ -216,21 +216,43 @@
     </v-col>
 
     <v-col cols="12" style="height: 10vh;">
-      <v-textarea
-        class="mx-5"
-        v-model="messageContent"
-        prepend-inner-icon="mdi-emoticon"
-        prepend-icon="mdi-paperclip"
-        append-outer-icon="mdi-send"
-        solo
-        hide-details="auto"
-        no-resize
-        rows="3"
-        rounded
-        clearable
-        @click:append-outer="sendMessage"
-        @keyup.enter.exact="sendMessage"
-      ></v-textarea>
+      <v-expand-transition>
+        <v-form v-model="fileInputValid" v-show="showFileInput">
+          <v-file-input
+            :rules="rules"
+            v-show="showFileInput"
+            class="mx-5"
+            v-model="file"
+            counter
+            label="File input"
+            placeholder="Select your file"
+            outlined
+            append-outer-icon="mdi-send"
+            :show-size="1000"
+            @click:append-outer="sendFile"
+          ></v-file-input>
+        </v-form>
+      </v-expand-transition>
+
+      <v-expand-transition>
+        <v-textarea
+          class="mx-5"
+          v-show="showTextField"
+          v-model="messageContent"
+          prepend-inner-icon="mdi-emoticon"
+          prepend-icon="mdi-paperclip"
+          append-outer-icon="mdi-send"
+          solo
+          hide-details="auto"
+          clearable
+          no-resize
+          rows="3"
+          rounded
+          @click:prepend="hideTextField"
+          @click:append-outer="sendMessage"
+          @keyup.enter.exact="sendMessage"
+        ></v-textarea>
+      </v-expand-transition>
     </v-col>
   </v-row>
 </template>
@@ -266,12 +288,25 @@ export default Vue.extend({
 
     showAddUsersDialog: false,
     showOnlineUsersDialog: false,
+    showTextField: true,
+    showFileInput: false,
+    fileUploadOrDownload: false,
+    fileInputValid: false,
 
     selectedUsersToAddToRoom: [] as string[],
+    file: {} as File,
 
     messageType: MessageType,
     userID: store.state.email,
     userName: store.state.name,
+
+    fileProgress: 0,
+
+    rules: [
+      (value: File) => !!value || "File cannot be empty",
+      (value: File) =>
+        !value || value.size < 256 * 1024 || "File size limit is 256MB!",
+    ],
   }),
 
   methods: {
@@ -300,6 +335,18 @@ export default Vue.extend({
 
       this.sendWSMessage(JSON.stringify(message));
       this.messageContent = "";
+    },
+
+    sendFile: function () {
+      console.log(this.fileInputValid);
+      if (this.fileInputValid == false) return;
+
+      const reader = new FileReader();
+      reader.onloadend = function (event: ProgressEvent<FileReader>) {
+        if (event.target) console.log(event.target.result);
+      };
+
+      reader.readAsDataURL(this.file);
     },
 
     loadMoreMessages: function () {
@@ -355,9 +402,23 @@ export default Vue.extend({
       this.sendWSMessage(JSON.stringify(message));
       this.showOnlineUsersDialog = false;
     },
+
+    hideTextField: function () {
+      this.showFileInput = true;
+      this.showTextField = false;
+    },
+
+    revealTextField: function () {
+      this.showFileInput = false;
+      this.showTextField = true;
+    },
+  },
+  watch: {
+    file: function () {
+      if (!this.file) {
+        this.revealTextField();
+      }
+    },
   },
 });
 </script>
-
-<style>
-</style>
