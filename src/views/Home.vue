@@ -91,6 +91,8 @@
 
         <v-col cols="9">
           <ChatPage
+            :initiateDownload="initiateDownload"
+            :fileUploadDownload="fileUploadDownload"
             :associates="usersOnline"
             v-if="showChatPage"
             :clearFetchedUsers="clearFetchedUsers"
@@ -112,8 +114,9 @@ let socket: WebSocket;
 import Vue from "vue";
 import store from "@/store";
 import router from "@/router";
+import CryptoJS from "crypto-js";
 
-import { WSMessageType, MessageType } from "./Constants";
+import { WSMessageType, MessageType, DefaultChunkSize } from "./Constants";
 
 import SideBar from "../components/SideBar.vue";
 import RoomsPage from "../components/RoomsPage.vue";
@@ -130,6 +133,8 @@ import {
   RecentChatPreview,
   UsersOnline,
   ExitRoomDetails,
+  FileUploadDownloadDetails,
+  FileUploadComplete,
 } from "./Types";
 
 export default Vue.extend({
@@ -148,9 +153,11 @@ export default Vue.extend({
     unreadRoomMessages: {} as UnreadRooms,
     recentChatPreview: {} as RecentChatPreview,
     usersOnline: {} as UsersOnline,
+    fileUploadDownload: {} as FileUploadDownloadDetails,
 
     userID: store.state.email,
     newRoomName: "",
+    currentDownloadRoomID: "",
 
     showAddRoomDialog: false,
     showNotificationDialog: false,
@@ -194,7 +201,7 @@ export default Vue.extend({
           this.indexOfCurrentViewedRoom
         ].roomIcon = this.currentViewedRoom.roomIcon;
 
-        this.$nextTick(this.scrollToBottomOfChatPage);
+        this.scrollToBottomOfChatPage();
       } else {
         for (let i = roomDetails.messages.length - 1; i >= 0; i--) {
           this.currentViewedRoom.messages.unshift(roomDetails.messages[i]);
@@ -219,8 +226,10 @@ export default Vue.extend({
           name: "",
           userID: "",
           roomID: "",
+          size: "",
+          hash: "",
           message: message,
-          index: this.currentViewedRoom.messages.length,
+          index: this.currentViewedRoom.messages.length + 1,
         });
       }
 
@@ -235,7 +244,7 @@ export default Vue.extend({
       if (this.currentViewedRoom.roomID === message.roomID) {
         this.updateRoomContentPage();
         this.currentViewedRoom.messages.push(message);
-        this.$nextTick(this.scrollToBottomOfChatPage);
+        this.scrollToBottomOfChatPage();
         return;
       }
 
@@ -263,11 +272,13 @@ export default Vue.extend({
         this.currentViewedRoom.messages.push({
           type: MessageType.Info,
           message: message,
+          size: "",
+          hash: "",
           time: "",
           name: "",
           userID: "",
           roomID: "",
-          index: this.currentViewedRoom.messages.length,
+          index: this.currentViewedRoom.messages.length + 1,
         });
 
         console.log("sent notification");
@@ -281,11 +292,13 @@ export default Vue.extend({
       const message: Message = {
         time: "",
         name: "",
+        size: "",
+        hash: "",
         type: MessageType.Info,
         userID: "",
         roomID: "",
         message: "You left the room.",
-        index: this.currentViewedRoom.messages.length,
+        index: this.currentViewedRoom.messages.length + 1,
       };
 
       if (exitRoom.roomID == this.currentViewedRoom.roomID) {
@@ -296,21 +309,194 @@ export default Vue.extend({
       }
     },
 
+    onUploadFileChunks: function (file: FileUploadDownloadDetails) {
+      console.log("sending another file chunk", file, this.fileUploadDownload);
+
+      if (
+        this.fileUploadDownload.fileName === file.fileName &&
+        !this.fileUploadDownload.isDownloader
+      ) {
+        console.log("sending now");
+        this.fileUploadDownload.chunk = file.nextChunk;
+        // If file is successfully downloaded, send a FileUploadSuccess message to server.
+        if (this.fileUploadDownload.chunk >= this.fileUploadDownload.chunks) {
+          console.log("success");
+          this.fileUploadDownload.downloading = false;
+          this.fileUploadDownload.progress = 100;
+
+          const message = {
+            msgType: WSMessageType.FileUploadSuccess,
+            userID: this.userID,
+            name: this.userID,
+            fileName: this.fileUploadDownload.fileName,
+            roomID: this.currentViewedRoom.roomID,
+            fileSize: this.fileUploadDownload.fileSize.toString() + "MB",
+            fileHash: this.fileUploadDownload.fileHash,
+          };
+
+          socket.send(JSON.stringify(message));
+          const infoMessage: Message = {
+            time: "",
+            size: "",
+            hash: "",
+            type: MessageType.Info,
+            name: "",
+            userID: "",
+            roomID: this.fileUploadDownload.roomID,
+            message: "File successfully uploaded.",
+            index: 0,
+          };
+
+          if (this.currentViewedRoom.roomID === this.fileUploadDownload.roomID)
+            this.currentViewedRoom.messages.push(infoMessage);
+
+          this.updateChatRoomPage();
+          return;
+        }
+
+        this.fileUploadDownload.progress =
+          (this.fileUploadDownload.chunk / this.fileUploadDownload.chunks) *
+          100;
+
+        if (this.fileUploadDownload.downloading === false) {
+          return;
+        }
+
+        const offset = this.fileUploadDownload.chunk * DefaultChunkSize;
+
+        const reader = new FileReader();
+        reader.onload = (event: ProgressEvent<FileReader>) => {
+          if (!event.target) {
+            return;
+          }
+
+          const data = event.target.result;
+          if (!data) {
+            return;
+          }
+
+          const fileUniqueHash = CryptoJS.SHA256(data.toString()).toString();
+
+          const message = {
+            msgType: WSMessageType.UploadFileChunk,
+            userID: this.userID,
+            file: data,
+            fileName: this.fileUploadDownload.fileName,
+            compressedFileHash: this.fileUploadDownload.fileHash,
+            newChunkHash: fileUniqueHash,
+            recentChunkHash: "",
+            chunkIndex: this.fileUploadDownload.chunk,
+          };
+
+          // Send new file upload information to server, chunk == 0 indicates a new file.
+          if (this.fileUploadDownload.chunk === 0) {
+            socket.send(JSON.stringify(message));
+            return;
+          }
+
+          const recentOffset =
+            (this.fileUploadDownload.chunk - 1) * DefaultChunkSize;
+
+          const recentFileReader = new FileReader();
+          recentFileReader.onload = (e: ProgressEvent<FileReader>) => {
+            if (!e.target) {
+              return;
+            }
+
+            const recentData = e.target.result;
+            if (!recentData) {
+              return;
+            }
+
+            const recentFileUniqueHash = CryptoJS.SHA256(
+              recentData.toString()
+            ).toString();
+
+            message.recentChunkHash = recentFileUniqueHash;
+            socket.send(JSON.stringify(message));
+          };
+
+          if (this.$children.length > 2) {
+            console.log("Adding more");
+            recentFileReader.readAsDataURL(
+              this.$children[2].$data.file.slice(
+                recentOffset,
+                recentOffset + DefaultChunkSize
+              )
+            );
+          }
+        };
+
+        if (this.$children.length > 2) {
+          console.log("Adding more");
+          reader.readAsDataURL(
+            this.$children[2].$data.file.slice(
+              offset,
+              offset + DefaultChunkSize
+            )
+          );
+        }
+      }
+    },
+
+    onFileUploadSuccess: function (completeFileDetails: FileUploadComplete) {
+      console.log("fille upload success", completeFileDetails);
+      const message: Message = {
+        time: "",
+        size: completeFileDetails.fileSize,
+        hash: completeFileDetails.fileHash,
+        type: MessageType.File,
+        name: completeFileDetails.name,
+        userID: completeFileDetails.userID,
+        roomID: completeFileDetails.roomID,
+        message: completeFileDetails.fileName,
+        index: this.currentViewedRoom.messages.length + 1,
+      };
+
+      if (this.currentViewedRoom.roomID === completeFileDetails.roomID) {
+        this.currentViewedRoom.messages.push(message);
+      }
+
+      this.updateChatRoomPage();
+    },
+
+    initiateDownload: function (
+      roomID: string,
+      fileName: string,
+      fileSize: number,
+      fileHash: string,
+      chunks: number
+    ) {
+      this.fileUploadDownload.roomID = roomID;
+      this.fileUploadDownload.fileName = fileName;
+      this.fileUploadDownload.fileSize = fileSize;
+      this.fileUploadDownload.fileHash = fileHash;
+      this.fileUploadDownload.chunks = chunks;
+      this.fileUploadDownload.chunk = 0;
+      this.fileUploadDownload.progress = 0;
+      this.fileUploadDownload.isDownloader = false;
+      this.fileUploadDownload.downloading = true;
+    },
+
     updateRecentMessagePreview: function (roomID: string, message: string) {
       this.recentChatPreview[roomID] = message;
     },
 
     updateRoomContentPage: function () {
-      this.$children[1].$forceUpdate();
+      this.$nextTick(this.$children[1].$forceUpdate);
     },
 
     updateChatRoomPage: function () {
-      this.$children[2].$forceUpdate();
+      this.$nextTick(this.$children[2].$forceUpdate);
     },
 
     scrollToBottomOfChatPage: function () {
-      const scrollHeight = this.$children[2].$el.querySelector("#messages");
-      if (scrollHeight) scrollHeight.scrollTop = scrollHeight.scrollHeight;
+      this.$nextTick(() => {
+        if (this.$children.length > 2) {
+          const scrollHeight = this.$children[2].$el.querySelector("#messages");
+          if (scrollHeight) scrollHeight.scrollTop = scrollHeight.scrollHeight;
+        }
+      });
     },
 
     changeNumberOfUnreadNotification: async function (
@@ -394,6 +580,11 @@ export default Vue.extend({
     sendWSMessage: function (message: string) {
       socket.send(message);
     },
+
+    increaseDownloadPercentage: function () {
+      this.fileUploadDownload.progress++;
+      this.updateChatRoomPage();
+    },
   },
 
   mounted() {
@@ -464,13 +655,26 @@ export default Vue.extend({
             console.log("updated");
             if (this.showChatPage) {
               console.log("final update");
-              this.$nextTick(this.updateChatRoomPage);
+              this.updateChatRoomPage();
             }
           }
           break;
 
         case WSMessageType.ExitRoom:
           this.onExitRoom(jsonContent);
+          break;
+
+        case WSMessageType.UploadFileChunk:
+          this.onUploadFileChunks(jsonContent);
+          break;
+
+        case WSMessageType.FileUploadSuccess:
+          break;
+
+        case WSMessageType.UploadFileError:
+          if (this.$children.length > 2) {
+            this.$children[2].$emit("onUploadError");
+          }
           break;
       }
     };

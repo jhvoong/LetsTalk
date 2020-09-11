@@ -10,7 +10,13 @@ export const WSMessageType = {
     SentRoomRequest: "SentRoomRequest",
     OnlineStatus: "OnlineStatus",
     ExitRoom: "ExitRoom",
+    NewFileUpload: "NewFileUpload",
+    UploadFileChunk: "UploadFileChunk",
+    UploadFileError: "UploadFileError",
+    FileUploadSuccess: "FileUploadSuccess",
 }
+
+export const DefaultChunkSize = 125 * 1024
 
 export const SideBarOptions = {
     Notifications: "Notifications",

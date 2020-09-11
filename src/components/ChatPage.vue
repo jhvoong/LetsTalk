@@ -181,7 +181,7 @@
               <v-col v-if="message.type===messageType.File" cols="12">
                 <div align="center">
                   <v-chip href="https://github.com/metaclips">
-                    <b>{{message.message}} sent by {{message.name}}. Click to download.</b>
+                    <b>{{message.message}} sent by {{message.name}} [{{message.userID}}]. Click to download.</b>
                   </v-chip>
                 </div>
               </v-col>
@@ -210,6 +210,55 @@
                 </div>
               </v-col>
             </template>
+          </v-col>
+
+          <v-col
+            align="right"
+            v-if="fileUploadDownload && fileUploadDownload.roomID===currentViewedRoom.roomID && fileUploadDownload.progress<100"
+          >
+            <v-card shaped width="max-content">
+              <v-card-text>
+                <v-row align="center">
+                  <v-col
+                    cols="mx-auto"
+                  >{{fileUploadDownload.fileName}} ({{fileUploadDownload.fileSize}}MB)</v-col>
+                  <v-col cols="auto">
+                    <v-progress-circular
+                      :rotate="360"
+                      :size="50"
+                      :width="5"
+                      :value="fileUploadDownload.progress"
+                      v-if="fileUploadDownload.downloading"
+                      color="teal"
+                    >
+                      <v-btn
+                        icon
+                        @click="fileUploadDownload.isDownloader?startDownload():startUpload()"
+                      >
+                        <v-icon>mdi-cloud-download</v-icon>
+                      </v-btn>
+                    </v-progress-circular>
+
+                    <v-progress-circular
+                      v-else
+                      :rotate="360"
+                      :size="50"
+                      :width="5"
+                      :value="fileUploadDownload.progress"
+                      color="teal"
+                    >
+                      <v-btn
+                        @click="fileUploadDownload.isDownloader?stopDownload():stopUpload()"
+                        depressed
+                        icon
+                      >
+                        <v-icon>mdi-close</v-icon>
+                      </v-btn>
+                    </v-progress-circular>
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
           </v-col>
         </v-row>
       </v-container>
@@ -264,9 +313,19 @@ import Vue from "vue";
 import vuetify from "@/plugins/vuetify";
 import { Prop } from "vue/types/options";
 import store from "@/store";
+import CryptoJS from "crypto-js";
 
-import { RoomPageDetails, FetchedUsers, UsersOnline } from "../views/Types";
-import { WSMessageType, MessageType } from "../views/Constants";
+import {
+  RoomPageDetails,
+  FetchedUsers,
+  UsersOnline,
+  FileUploadDownloadDetails,
+} from "../views/Types";
+import {
+  WSMessageType,
+  MessageType,
+  DefaultChunkSize,
+} from "../views/Constants";
 
 export default Vue.extend({
   name: "ChatPage",
@@ -275,9 +334,11 @@ export default Vue.extend({
     currentViewedRoom: {} as Prop<RoomPageDetails>,
     fetchedUsers: Array as Prop<FetchedUsers[]>,
     associates: {} as Prop<UsersOnline>,
+    fileUploadDownload: {} as Prop<FileUploadDownloadDetails>,
 
     sendWSMessage: Function,
     clearFetchedUsers: Function,
+    initiateDownload: Function,
   },
 
   data: () => ({
@@ -286,11 +347,10 @@ export default Vue.extend({
     newRoomName: "",
     searchUserName: "",
 
-    showAddUsersDialog: false,
-    showOnlineUsersDialog: false,
     showTextField: true,
     showFileInput: false,
-    fileUploadOrDownload: false,
+    showAddUsersDialog: false,
+    showOnlineUsersDialog: false,
     fileInputValid: false,
 
     selectedUsersToAddToRoom: [] as string[],
@@ -300,12 +360,10 @@ export default Vue.extend({
     userID: store.state.email,
     userName: store.state.name,
 
-    fileProgress: 0,
-
     rules: [
       (value: File) => !!value || "File cannot be empty",
       (value: File) =>
-        !value || value.size < 256 * 1024 || "File size limit is 256MB!",
+        !value || value.size < 256 * 1024 * 1024 || "File size limit is 256MB!",
     ],
   }),
 
@@ -320,6 +378,10 @@ export default Vue.extend({
       ) {
         this.loadMoreMessages();
       }
+    },
+
+    onUploadError: function () {
+      this.fileUploadDownload.downloading = false;
     },
 
     sendMessage: function () {
@@ -338,12 +400,42 @@ export default Vue.extend({
     },
 
     sendFile: function () {
-      console.log(this.fileInputValid);
       if (this.fileInputValid == false) return;
 
       const reader = new FileReader();
-      reader.onloadend = function (event: ProgressEvent<FileReader>) {
-        if (event.target) console.log(event.target.result);
+      reader.onloadend = (event: ProgressEvent<FileReader>) => {
+        if (event.target) {
+          const result = event.target.result;
+          if (result) {
+            const uniqueFileHash = CryptoJS.SHA256(
+              result.toString()
+            ).toString();
+
+            const message = {
+              msgType: WSMessageType.NewFileUpload,
+              userID: this.userID,
+              fileName: this.file.name,
+              fileHash: uniqueFileHash,
+              fileSize: (this.file.size / (1024 * 1024)).toString() + "MB",
+              fileType: this.file.type,
+            };
+
+            const chunks = Math.ceil(this.file.size / DefaultChunkSize);
+
+            this.sendWSMessage(JSON.stringify(message));
+            this.initiateDownload(
+              this.currentViewedRoom.roomID,
+              this.file.name,
+              this.file.size / (1024 * 1024),
+              uniqueFileHash,
+              chunks
+            );
+
+            this.showTextField = true;
+            this.showFileInput = false;
+            this.$forceUpdate();
+          }
+        }
       };
 
       reader.readAsDataURL(this.file);
@@ -404,6 +496,7 @@ export default Vue.extend({
     },
 
     hideTextField: function () {
+      if (this.fileUploadDownload.downloading) return;
       this.showFileInput = true;
       this.showTextField = false;
     },
@@ -413,6 +506,7 @@ export default Vue.extend({
       this.showTextField = true;
     },
   },
+
   watch: {
     file: function () {
       if (!this.file) {

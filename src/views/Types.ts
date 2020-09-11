@@ -49,13 +49,42 @@ export interface Message {
     userID: string;
     roomID: string;
     message: string;
+    size: string;
+    hash: string;
 
     index: number;
+}
+
+export interface FileUploadDownloadDetails {
+    roomID: string;
+    fileName: string;
+    fileSize: number;
+    fileHash: string;
+    downloading: boolean;
+    isDownloader: boolean;
+    progress: number;
+    chunks: number;
+    chunk: number;
+    nextChunk: number;
+}
+
+export interface FileUploadComplete {
+    userID: string;
+    name: string;
+    fileName: string;
+    fileSize: string;
+    fileHash: string;
+    roomID: string;
 }
 
 export interface ExitRoomDetails {
     roomID: string;
     userID: string;
+}
+
+export interface FileChunk {
+    fileName: string;
+
 }
 
 export interface AssociateStatus {

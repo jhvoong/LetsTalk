@@ -210,7 +210,7 @@ func (msg messageBytes) handleExitRoom(author string) {
 func (msg messageBytes) handleNewFileUpload() {
 	file := file{}
 	if err := json.Unmarshal(msg, &file); err != nil {
-		log.Println(err)
+		log.Errorln("error unmarshalling byte in handle new file upload, err:", err)
 		return
 	}
 
@@ -237,7 +237,7 @@ func (msg messageBytes) handleNewFileUpload() {
 		}
 
 	} else {
-		log.Println("Error on handle new file upload calling UploadNewFile", err)
+		log.Println("error on handle new file upload calling UploadNewFile, error:", err)
 		data.ErrorMessage = values.ErrFileUpload.Error()
 		data.MsgType = values.UploadFileErrorMsgType
 	}
@@ -340,11 +340,14 @@ func (msg messageBytes) handleUploadFileUploadComplete() {
 	}{}
 
 	if err := json.Unmarshal(msg, &data); err != nil {
-		log.Println(err)
+		log.Errorln("error unmarshalling file in handle upload file complete, err:", err)
 		return
 	}
 
 	data.MsgType = values.UploadFileSuccessMsgType
+	values.MapEmailToName.Mutex.RLock()
+	data.UserName = values.MapEmailToName.Mapper[data.UserID]
+	values.MapEmailToName.Mutex.RUnlock()
 
 	roomUsers, err := Message{
 		RoomID:  data.RoomID,
@@ -358,12 +361,12 @@ func (msg messageBytes) handleUploadFileUploadComplete() {
 	}.saveMessageContent()
 
 	if err != nil {
-		log.Println(err)
+		log.Errorln("error saving message content in handle upload file, err:", err)
 	}
 
 	jsonContent, err := json.Marshal(&data)
 	if err != nil {
-		log.Println(err)
+		log.Errorln(err)
 	}
 
 	for _, roomUser := range roomUsers {
