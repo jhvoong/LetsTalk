@@ -55,13 +55,19 @@ export interface Message {
     index: number;
 }
 
+export interface FileDownload {
+    [index: string]: FileUploadDownloadDetails;
+}
+
 export interface FileUploadDownloadDetails {
     roomID: string;
     fileName: string;
-    fileSize: number;
     fileHash: string;
+
     downloading: boolean;
     isDownloader: boolean;
+
+    fileSize: number;
     progress: number;
     chunks: number;
     chunk: number;

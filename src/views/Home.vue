@@ -12,12 +12,17 @@
 
     <v-col cols="11">
       <v-row
-        style="height: 100%;"
+        style="height: 100%"
         align="center"
         justify="center"
-        v-if="showNotificationDialog||showAddRoomDialog"
+        v-if="showNotificationDialog || showAddRoomDialog"
       >
-        <v-card v-if="showNotificationDialog" height="min-content" outlined shaped>
+        <v-card
+          v-if="showNotificationDialog"
+          height="min-content"
+          outlined
+          shaped
+        >
           <v-row class="mx-5">
             <v-col cols="12">
               <v-card-title>
@@ -31,22 +36,55 @@
 
             <v-col cols="12">
               <v-card-text>
-                <v-container fluid style="max-height: 72vh;" class="overflow-y-auto">
-                  <v-card-subtitle v-if="joinRequests.length==0">No Notifications</v-card-subtitle>
-                  <v-card v-for="(joinRequest, index) in joinRequests" :key="index" flat>
-                    <v-card-text>{{joinRequest.requestingUserName}} [{{joinRequest.requestingUserID}}] wants you to join room {{joinRequest.roomName}}</v-card-text>
+                <v-container
+                  fluid
+                  style="max-height: 72vh"
+                  class="overflow-y-auto"
+                >
+                  <v-card-subtitle v-if="joinRequests.length == 0"
+                    >No Notifications</v-card-subtitle
+                  >
+                  <v-card
+                    v-for="(joinRequest, index) in joinRequests"
+                    :key="index"
+                    flat
+                  >
+                    <v-card-text
+                      >{{ joinRequest.requestingUserName }} [{{
+                        joinRequest.requestingUserID
+                      }}] wants you to join room
+                      {{ joinRequest.roomName }}</v-card-text
+                    >
                     <v-card-actions>
                       <v-btn
-                        @click="joinRoom(joinRequest.requestingUserID, joinRequest.roomID, joinRequest.roomName,true, index)"
+                        @click="
+                          joinRoom(
+                            joinRequest.requestingUserID,
+                            joinRequest.roomID,
+                            joinRequest.roomName,
+                            true,
+                            index
+                          )
+                        "
                         text
                         color="green"
-                      >Join</v-btn>
+                        >Join</v-btn
+                      >
 
                       <v-btn
-                        @click="joinRoom(joinRequest.requestingUserID, joinRequest.roomID, joinRequest.roomName,false, index)"
+                        @click="
+                          joinRoom(
+                            joinRequest.requestingUserID,
+                            joinRequest.roomID,
+                            joinRequest.roomName,
+                            false,
+                            index
+                          )
+                        "
                         text
                         color="red"
-                      >Reject</v-btn>
+                        >Reject</v-btn
+                      >
                     </v-card-actions>
                   </v-card>
                 </v-container>
@@ -71,7 +109,9 @@
                 outlined
                 v-model="newRoomName"
               />
-              <v-btn @click="createRoom()" text color="green">Create Room</v-btn>
+              <v-btn @click="createRoom()" text color="green"
+                >Create Room</v-btn
+              >
             </v-col>
           </v-row>
         </v-card>
@@ -91,7 +131,7 @@
 
         <v-col cols="9">
           <ChatPage
-            :initiateDownload="initiateDownload"
+            :initiateFile="initiateFile"
             :fileUploadDownload="fileUploadDownload"
             :associates="usersOnline"
             v-if="showChatPage"
@@ -135,6 +175,7 @@ import {
   ExitRoomDetails,
   FileUploadDownloadDetails,
   FileUploadComplete,
+  FileDownload,
 } from "./Types";
 
 export default Vue.extend({
@@ -153,7 +194,7 @@ export default Vue.extend({
     unreadRoomMessages: {} as UnreadRooms,
     recentChatPreview: {} as RecentChatPreview,
     usersOnline: {} as UsersOnline,
-    fileUploadDownload: {} as FileUploadDownloadDetails,
+    fileUploadDownload: {} as FileDownload,
 
     userID: store.state.email,
     newRoomName: "",
@@ -162,6 +203,7 @@ export default Vue.extend({
     showAddRoomDialog: false,
     showNotificationDialog: false,
     showChatPage: false,
+    isFile: false,
 
     indexOfCurrentViewedRoom: 0,
     unreadRoomMessageCount: 0,
@@ -310,28 +352,31 @@ export default Vue.extend({
     },
 
     onUploadFileChunks: function (file: FileUploadDownloadDetails) {
-      console.log("sending another file chunk", file, this.fileUploadDownload);
+      console.log("sending another file chunk", file);
 
       if (
-        this.fileUploadDownload.fileName === file.fileName &&
-        !this.fileUploadDownload.isDownloader
+        this.fileUploadDownload[file.fileHash] &&
+        !this.fileUploadDownload[file.fileHash].isDownloader
       ) {
+        const fileDetails = this.fileUploadDownload[file.fileHash];
         console.log("sending now");
-        this.fileUploadDownload.chunk = file.nextChunk;
-        // If file is successfully downloaded, send a FileUploadSuccess message to server.
-        if (this.fileUploadDownload.chunk >= this.fileUploadDownload.chunks) {
+        fileDetails.chunk = file.nextChunk;
+
+        // If file is successfully downloaded, send a FileUploadSuccess message to server
+        // so as to be broadcasted to other users.
+        if (fileDetails.chunk >= fileDetails.chunks) {
           console.log("success");
-          this.fileUploadDownload.downloading = false;
-          this.fileUploadDownload.progress = 100;
+          fileDetails.downloading = false;
+          fileDetails.progress = 100;
 
           const message = {
             msgType: WSMessageType.FileUploadSuccess,
             userID: this.userID,
             name: this.userID,
-            fileName: this.fileUploadDownload.fileName,
-            roomID: this.currentViewedRoom.roomID,
-            fileSize: this.fileUploadDownload.fileSize.toString() + "MB",
-            fileHash: this.fileUploadDownload.fileHash,
+            fileName: fileDetails.fileName,
+            roomID: fileDetails.roomID,
+            fileSize: fileDetails.fileSize.toString() + "MB",
+            fileHash: fileDetails.fileHash,
           };
 
           socket.send(JSON.stringify(message));
@@ -342,27 +387,27 @@ export default Vue.extend({
             type: MessageType.Info,
             name: "",
             userID: "",
-            roomID: this.fileUploadDownload.roomID,
+            roomID: fileDetails.roomID,
             message: "File successfully uploaded.",
             index: 0,
           };
 
-          if (this.currentViewedRoom.roomID === this.fileUploadDownload.roomID)
+          delete this.fileUploadDownload[fileDetails.fileHash];
+
+          if (this.currentViewedRoom.roomID === fileDetails.roomID)
             this.currentViewedRoom.messages.push(infoMessage);
 
           this.updateChatRoomPage();
           return;
         }
 
-        this.fileUploadDownload.progress =
-          (this.fileUploadDownload.chunk / this.fileUploadDownload.chunks) *
-          100;
+        fileDetails.progress = (fileDetails.chunk / fileDetails.chunks) * 100;
 
-        if (this.fileUploadDownload.downloading === false) {
+        if (fileDetails.downloading === false) {
           return;
         }
 
-        const offset = this.fileUploadDownload.chunk * DefaultChunkSize;
+        const offset = fileDetails.chunk * DefaultChunkSize;
 
         const reader = new FileReader();
         reader.onload = (event: ProgressEvent<FileReader>) => {
@@ -381,24 +426,24 @@ export default Vue.extend({
             msgType: WSMessageType.UploadFileChunk,
             userID: this.userID,
             file: data,
-            fileName: this.fileUploadDownload.fileName,
-            compressedFileHash: this.fileUploadDownload.fileHash,
+            fileName: fileDetails.fileName,
+            fileHash: fileDetails.fileHash,
             newChunkHash: fileUniqueHash,
             recentChunkHash: "",
-            chunkIndex: this.fileUploadDownload.chunk,
+            chunkIndex: fileDetails.chunk,
           };
 
           // Send new file upload information to server, chunk == 0 indicates a new file.
-          if (this.fileUploadDownload.chunk === 0) {
+          if (fileDetails.chunk === 0) {
             socket.send(JSON.stringify(message));
             return;
           }
 
-          const recentOffset =
-            (this.fileUploadDownload.chunk - 1) * DefaultChunkSize;
+          const recentOffset = (fileDetails.chunk - 1) * DefaultChunkSize;
 
-          const recentFileReader = new FileReader();
-          recentFileReader.onload = (e: ProgressEvent<FileReader>) => {
+          // Get recent file chunk hash.
+          const recentFileChunkReader = new FileReader();
+          recentFileChunkReader.onload = (e: ProgressEvent<FileReader>) => {
             if (!e.target) {
               return;
             }
@@ -417,8 +462,7 @@ export default Vue.extend({
           };
 
           if (this.$children.length > 2) {
-            console.log("Adding more");
-            recentFileReader.readAsDataURL(
+            recentFileChunkReader.readAsDataURL(
               this.$children[2].$data.file.slice(
                 recentOffset,
                 recentOffset + DefaultChunkSize
@@ -428,7 +472,6 @@ export default Vue.extend({
         };
 
         if (this.$children.length > 2) {
-          console.log("Adding more");
           reader.readAsDataURL(
             this.$children[2].$data.file.slice(
               offset,
@@ -439,8 +482,7 @@ export default Vue.extend({
       }
     },
 
-    onFileUploadSuccess: function (completeFileDetails: FileUploadComplete) {
-      console.log("fille upload success", completeFileDetails);
+    broadcastFileToRoom: function (completeFileDetails: FileUploadComplete) {
       const message: Message = {
         time: "",
         size: completeFileDetails.fileSize,
@@ -460,22 +502,26 @@ export default Vue.extend({
       this.updateChatRoomPage();
     },
 
-    initiateDownload: function (
+    initiateFile: function (
       roomID: string,
       fileName: string,
       fileSize: number,
       fileHash: string,
-      chunks: number
+      chunks: number,
+      isDownload: boolean
     ) {
-      this.fileUploadDownload.roomID = roomID;
-      this.fileUploadDownload.fileName = fileName;
-      this.fileUploadDownload.fileSize = fileSize;
-      this.fileUploadDownload.fileHash = fileHash;
-      this.fileUploadDownload.chunks = chunks;
-      this.fileUploadDownload.chunk = 0;
-      this.fileUploadDownload.progress = 0;
-      this.fileUploadDownload.isDownloader = false;
-      this.fileUploadDownload.downloading = true;
+      this.fileUploadDownload[fileHash] = {
+        roomID: roomID,
+        fileName: fileName,
+        fileHash: fileHash,
+        downloading: true,
+        isDownloader: isDownload,
+        fileSize: fileSize,
+        progress: 0,
+        chunks: chunks,
+        chunk: 0,
+        nextChunk: 0,
+      };
     },
 
     updateRecentMessagePreview: function (roomID: string, message: string) {
@@ -580,11 +626,6 @@ export default Vue.extend({
     sendWSMessage: function (message: string) {
       socket.send(message);
     },
-
-    increaseDownloadPercentage: function () {
-      this.fileUploadDownload.progress++;
-      this.updateChatRoomPage();
-    },
   },
 
   mounted() {
@@ -669,6 +710,7 @@ export default Vue.extend({
           break;
 
         case WSMessageType.FileUploadSuccess:
+          this.broadcastFileToRoom(jsonContent);
           break;
 
         case WSMessageType.UploadFileError:

@@ -1,17 +1,21 @@
 <template>
-  <v-row no-gutters style="height: 100vh;">
-    <v-col cols="12" style="height: 10vh;">
+  <v-row no-gutters style="height: 100vh">
+    <v-col cols="12" style="height: 10vh">
       <v-app-bar tile flat height="100%" width="100%">
         <v-app-bar-nav-icon class="mx-5">
           <v-avatar>
             <v-img
-              :src="currentViewedRoom.roomIcon?currentViewedRoom.roomIcon:require('../assets/unilag.svg')"
+              :src="
+                currentViewedRoom.roomIcon
+                  ? currentViewedRoom.roomIcon
+                  : require('../assets/unilag.svg')
+              "
             ></v-img>
           </v-avatar>
         </v-app-bar-nav-icon>
 
         <v-toolbar-title>
-          <b>{{currentViewedRoom.roomName}}</b>
+          <b>{{ currentViewedRoom.roomName }}</b>
         </v-toolbar-title>
 
         <v-spacer></v-spacer>
@@ -31,7 +35,7 @@
           </template>
 
           <v-card align="center">
-            <v-row style="max-width: 40vh;" align="center" justify="center">
+            <v-row style="max-width: 40vh" align="center" justify="center">
               <v-col cols="12"></v-col>
               <v-col cols="12" sm="8">
                 <v-text-field
@@ -49,7 +53,7 @@
                 <v-container
                   fluid
                   class="ml-auto overflow-y-auto scroll-behavior-smooth"
-                  style="max-height: 40vh;"
+                  style="max-height: 40vh"
                 >
                   <v-checkbox
                     class="text--truncate"
@@ -57,7 +61,7 @@
                     multiple
                     v-for="(user, i) in fetchedUsers"
                     :key="i"
-                    :label="user.name+' ['+user.userID+']'"
+                    :label="user.name + ' [' + user.userID + ']'"
                     :value="user.userID"
                     v-model="selectedUsersToAddToRoom"
                   ></v-checkbox>
@@ -69,10 +73,11 @@
               <v-btn @click="closeAddUserDialog" color="red" text>exit</v-btn>
               <v-btn
                 @click="requestUserToJoinRoom"
-                :disabled="selectedUsersToAddToRoom.length===0"
+                :disabled="selectedUsersToAddToRoom.length === 0"
                 color="green"
                 text
-              >add users</v-btn>
+                >add users</v-btn
+              >
             </v-card-actions>
           </v-card>
         </v-menu>
@@ -100,10 +105,10 @@
               <v-col cols="12"></v-col>
               <v-col
                 cols="12"
-                v-for="(onlineUser,index) in currentViewedRoom.registeredUsers"
+                v-for="(onlineUser, index) in currentViewedRoom.registeredUsers"
                 :key="index"
               >
-                <template v-if="onlineUser==userID">
+                <template v-if="onlineUser == userID">
                   <v-badge inline dot color="green"></v-badge>
                   <span class="mx-4">
                     <b>You</b>
@@ -114,10 +119,22 @@
                   <v-badge
                     inline
                     dot
-                    :color="associates[onlineUser]&&associates[onlineUser].isOnline===true ? 'green' : 'red'"
+                    :color="
+                      associates[onlineUser] &&
+                      associates[onlineUser].isOnline === true
+                        ? 'green'
+                        : 'red'
+                    "
                   ></v-badge>
                   <span class="mx-4">
-                    <b>{{associates[onlineUser]?associates[onlineUser].name:""}} [{{onlineUser}}]</b>
+                    <b
+                      >{{
+                        associates[onlineUser]
+                          ? associates[onlineUser].name
+                          : ""
+                      }}
+                      [{{ onlineUser }}]</b
+                    >
                   </span>
                 </template>
               </v-col>
@@ -133,79 +150,108 @@
       </v-app-bar>
     </v-col>
 
-    <v-col cols="12" style="height: 75vh;">
+    <v-col cols="12" style="height: 75vh">
       <v-container
         id="messages"
         class="overflow-y-auto scroll-behavior-smooth"
-        style="height: 75vh;"
+        style="height: 75vh"
         fluid
       >
         <v-row v-scroll:#messages="onScroll" dense>
           <v-col
             class="my-2"
             cols="12"
-            v-for="(message,index) in currentViewedRoom.messages"
+            v-for="(message, index) in currentViewedRoom.messages"
             :key="index"
           >
-            <template v-if="message.type===messageType.Message">
-              <v-row dense align="end" justify="end" v-if="message.userID===userID">
+            <template v-if="message.type === messageType.Message">
+              <v-row
+                dense
+                align="end"
+                justify="end"
+                v-if="message.userID === userID"
+              >
                 <v-card
                   flat
-                  :color="vuetify.framework.theme.dark?'#778899':'#bbeaff'"
+                  :color="vuetify.framework.theme.dark ? '#778899' : '#bbeaff'"
                   max-width="65%"
                 >
                   <v-card-text class="text--wrap">
-                    <b>{{message.message}}</b>
+                    <b>{{ message.message }}</b>
                   </v-card-text>
 
-                  <v-card-subtitle align="right">{{message.userID}} {{message.time}}</v-card-subtitle>
+                  <v-card-subtitle align="right"
+                    >{{ message.userID }} {{ message.time }}</v-card-subtitle
+                  >
                 </v-card>
               </v-row>
 
               <v-row dense v-else>
-                <v-avatar class="mx-2" style="align-self: flex-end;" rounded>
-                  <v-img height="50px" width="50px" contain :src="require('../assets/unilag.svg')"></v-img>
+                <v-avatar class="mx-2" style="align-self: flex-end" rounded>
+                  <v-img
+                    height="50px"
+                    width="50px"
+                    contain
+                    :src="require('../assets/unilag.svg')"
+                  ></v-img>
                 </v-avatar>
-                <v-card flat :color="vuetify.framework.theme.dark?'':'#DCDCDC'" max-width="65%">
+                <v-card
+                  flat
+                  :color="vuetify.framework.theme.dark ? '' : '#DCDCDC'"
+                  max-width="65%"
+                >
                   <v-card-text>
-                    <b>{{message.message}}</b>
+                    <b>{{ message.message }}</b>
                   </v-card-text>
                   <v-card-subtitle align="right" class="ml-auto">
-                    <b>{{message.userID}} {{message.time}}</b>
+                    <b>{{ message.userID }} {{ message.time }}</b>
                   </v-card-subtitle>
                 </v-card>
               </v-row>
             </template>
 
             <template v-else>
-              <v-col v-if="message.type===messageType.File" cols="12">
+              <v-col v-if="message.type === messageType.File" cols="12">
                 <div align="center">
                   <v-chip href="https://github.com/metaclips">
-                    <b>{{message.message}} sent by {{message.name}} [{{message.userID}}]. Click to download.</b>
+                    <b
+                      >{{ message.message }} sent by {{ message.name }} [{{
+                        message.userID
+                      }}]. Click to download.</b
+                    >
                   </v-chip>
                 </div>
               </v-col>
 
-              <v-col v-if="message.type===messageType.Info" cols="12">
+              <v-col v-if="message.type === messageType.Info" cols="12">
                 <div align="center">
                   <v-chip>
-                    <b>{{message.message}}.</b>
+                    <b>{{ message.message }}.</b>
                   </v-chip>
                 </div>
               </v-col>
 
-              <v-col v-if="message.type===messageType.ClassSessionLink" cols="12">
+              <v-col
+                v-if="message.type === messageType.ClassSessionLink"
+                cols="12"
+              >
                 <div align="center">
                   <v-chip href="https://github.com/metaclips">
-                    <b>Class session started by {{message.name}}. Click to join.</b>
+                    <b
+                      >Class session started by {{ message.name }}. Click to
+                      join.</b
+                    >
                   </v-chip>
                 </div>
               </v-col>
 
-              <v-col v-if="message.type===messageType.ClassSession" cols="12">
+              <v-col v-if="message.type === messageType.ClassSession" cols="12">
                 <div align="center">
                   <v-chip href="https://github.com/metaclips">
-                    <b>Class session recording by {{message.name}}. Click to download.</b>
+                    <b
+                      >Class session recording by {{ message.name }}. Click to
+                      download.</b
+                    >
                   </v-chip>
                 </div>
               </v-col>
@@ -214,14 +260,20 @@
 
           <v-col
             align="right"
-            v-if="fileUploadDownload && fileUploadDownload.roomID===currentViewedRoom.roomID && fileUploadDownload.progress<100"
+            v-if="
+              fileUploadDownload &&
+              fileUploadDownload.roomID === currentViewedRoom.roomID &&
+              fileUploadDownload.progress < 100
+            "
           >
             <v-card shaped width="max-content">
               <v-card-text>
                 <v-row align="center">
-                  <v-col
-                    cols="mx-auto"
-                  >{{fileUploadDownload.fileName}} ({{fileUploadDownload.fileSize}}MB)</v-col>
+                  <v-col cols="mx-auto"
+                    >{{ fileUploadDownload.fileName }} ({{
+                      fileUploadDownload.fileSize
+                    }}MB)</v-col
+                  >
                   <v-col cols="auto">
                     <v-progress-circular
                       :rotate="360"
@@ -233,7 +285,11 @@
                     >
                       <v-btn
                         icon
-                        @click="fileUploadDownload.isDownloader?startDownload():startUpload()"
+                        @click="
+                          fileUploadDownload.isDownloader
+                            ? startDownload()
+                            : startUpload()
+                        "
                       >
                         <v-icon>mdi-cloud-download</v-icon>
                       </v-btn>
@@ -248,7 +304,11 @@
                       color="teal"
                     >
                       <v-btn
-                        @click="fileUploadDownload.isDownloader?stopDownload():stopUpload()"
+                        @click="
+                          fileUploadDownload.isDownloader
+                            ? stopDownload()
+                            : stopUpload()
+                        "
                         depressed
                         icon
                       >
@@ -264,7 +324,7 @@
       </v-container>
     </v-col>
 
-    <v-col cols="12" style="height: 10vh;">
+    <v-col cols="12" style="height: 10vh">
       <v-expand-transition>
         <v-form v-model="fileInputValid" v-show="showFileInput">
           <v-file-input
@@ -319,7 +379,7 @@ import {
   RoomPageDetails,
   FetchedUsers,
   UsersOnline,
-  FileUploadDownloadDetails,
+  FileDownload,
 } from "../views/Types";
 import {
   WSMessageType,
@@ -334,11 +394,11 @@ export default Vue.extend({
     currentViewedRoom: {} as Prop<RoomPageDetails>,
     fetchedUsers: Array as Prop<FetchedUsers[]>,
     associates: {} as Prop<UsersOnline>,
-    fileUploadDownload: {} as Prop<FileUploadDownloadDetails>,
+    fileUploadDownload: {} as Prop<FileDownload>,
 
     sendWSMessage: Function,
     clearFetchedUsers: Function,
-    initiateDownload: Function,
+    initiateFile: Function,
   },
 
   data: () => ({
@@ -352,6 +412,7 @@ export default Vue.extend({
     showAddUsersDialog: false,
     showOnlineUsersDialog: false,
     fileInputValid: false,
+    isFile: false, // Indicate file download or upload.
 
     selectedUsersToAddToRoom: [] as string[],
     file: {} as File,
@@ -378,10 +439,6 @@ export default Vue.extend({
       ) {
         this.loadMoreMessages();
       }
-    },
-
-    onUploadError: function () {
-      this.fileUploadDownload.downloading = false;
     },
 
     sendMessage: function () {
@@ -423,16 +480,18 @@ export default Vue.extend({
             const chunks = Math.ceil(this.file.size / DefaultChunkSize);
 
             this.sendWSMessage(JSON.stringify(message));
-            this.initiateDownload(
+            this.initiateFile(
               this.currentViewedRoom.roomID,
               this.file.name,
               this.file.size / (1024 * 1024),
               uniqueFileHash,
-              chunks
+              chunks,
+              false
             );
 
             this.showTextField = true;
             this.showFileInput = false;
+            this.file = new File([], "");
             this.$forceUpdate();
           }
         }

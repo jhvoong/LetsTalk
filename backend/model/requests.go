@@ -219,10 +219,12 @@ func (msg messageBytes) handleNewFileUpload() {
 		ErrorMessage string `json:"errorMsg,omitempty"`
 		RecentHash   string `json:"recentHash"`
 		FileName     string `json:"fileName,omitempty"`
+		FileHash     string `json:"fileHash"`
 		Chunk        int    `json:"nextChunk"`
 	}{}
 
 	data.FileName = file.FileName
+	data.FileHash = file.UniqueFileHash
 	user := file.User
 
 	if err := file.uploadNewFile(); err == mongo.ErrNoDocuments || err == nil {
@@ -253,15 +255,15 @@ func (msg messageBytes) handleNewFileUpload() {
 
 func (msg messageBytes) handleUploadFileChunk() {
 	data := struct {
-		MsgType            string `json:"msgType"`
-		User               string `json:"userID"`
-		FileName           string `json:"fileName"`
-		File               string `json:"file,omitempty"`
-		NewChunkHash       string `json:"newChunkHash,omitempty"`
-		RecentChunkHash    string `json:"recentChunkHash,omitempty"`
-		ChunkIndex         int    `json:"chunkIndex,omitempty"`
-		NextChunk          int    `json:"nextChunk"`
-		CompressedFileHash string `json:"compressedFileHash"`
+		MsgType         string `json:"msgType"`
+		User            string `json:"userID"`
+		FileName        string `json:"fileName"`
+		File            string `json:"file,omitempty"`
+		NewChunkHash    string `json:"newChunkHash,omitempty"`
+		RecentChunkHash string `json:"recentChunkHash,omitempty"`
+		ChunkIndex      int    `json:"chunkIndex,omitempty"`
+		NextChunk       int    `json:"nextChunk"`
+		FileHash        string `json:"fileHash"`
 	}{}
 
 	if err := json.Unmarshal(msg, &data); err != nil {
@@ -273,7 +275,7 @@ func (msg messageBytes) handleUploadFileChunk() {
 		UniqueFileHash:     data.NewChunkHash,
 		FileBinary:         data.File,
 		ChunkIndex:         data.ChunkIndex,
-		CompressedFileHash: data.CompressedFileHash,
+		CompressedFileHash: data.FileHash,
 	}
 
 	userID := data.User
