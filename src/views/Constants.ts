@@ -14,6 +14,7 @@ export const WSMessageType = {
     UploadFileChunk: "UploadFileChunk",
     UploadFileError: "UploadFileError",
     FileUploadSuccess: "FileUploadSuccess",
+    FileRequestDownload: "RequestDownload",
 }
 
 export const DefaultChunkSize = 125 * 1024

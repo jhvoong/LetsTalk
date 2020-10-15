@@ -394,6 +394,7 @@ func (msg messageBytes) handleRequestDownload(author string) {
 	if err := file.retrieveFileInformation(); err != nil {
 		file.MsgType = values.DownloadFileErrorMsgType
 	}
+
 	file.FileName = fileName
 
 	jsonContent, err := json.Marshal(&file)

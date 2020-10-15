@@ -213,7 +213,11 @@
             <template v-else>
               <v-col v-if="message.type === messageType.File" cols="12">
                 <div align="center">
-                  <v-chip href="https://github.com/metaclips">
+                  <v-chip
+                    @click="
+                      downloadFile(message.hash, message.message, message.size)
+                    "
+                  >
                     <b
                       >{{ message.message }} sent by {{ message.name }} [{{
                         message.userID
@@ -267,7 +271,11 @@
                 v-if="file.roomID == currentViewedRoom.roomID"
                 :align="file.isDownloader ? 'right' : 'left'"
               >
-                <v-card shaped max-width="50%">
+                <v-card
+                  :align="file.isDownloader ? 'left' : 'right'"
+                  shaped
+                  max-width="40%"
+                >
                   <v-card-subtitle>
                     <h3>
                       {{ file.userID }}
@@ -493,6 +501,34 @@ export default Vue.extend({
       };
 
       reader.readAsDataURL(this.file);
+    },
+
+    downloadFile: function (
+      fileHash: string,
+      fileName: string,
+      fileSize: string
+    ) {
+      this.initiateFile(
+        this.userID,
+        this.currentViewedRoom.roomID,
+        fileName,
+        fileSize,
+        fileHash,
+        0,
+        true
+      );
+      this.scrollToBottomOfChatPage();
+      setTimeout(() => {
+        this.$forceUpdate();
+      }, 0);
+
+      const message = {
+        msgType: WSMessageType.FileRequestDownload,
+        userID: this.userID,
+        fileName: fileName,
+        fileHash: fileHash,
+      };
+      this.sendWSMessage(JSON.stringify(message));
     },
 
     scrollToBottomOfChatPage: function () {

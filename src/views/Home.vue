@@ -366,7 +366,6 @@ export default Vue.extend({
         // If file is successfully downloaded, send a FileUploadSuccess message to server
         // so as to be broadcasted to other users.
         if (fileDetails.chunk >= fileDetails.chunks) {
-          console.log("success");
           fileDetails.downloading = false;
           fileDetails.progress = 100;
 
