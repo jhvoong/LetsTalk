@@ -259,66 +259,55 @@
           </v-col>
 
           <v-col
-            align="right"
-            v-if="
-              fileUploadDownload &&
-              fileUploadDownload.roomID === currentViewedRoom.roomID &&
-              fileUploadDownload.progress < 100
-            "
+            cols="12"
+            v-if="Object.keys(this.fileUploadDownload).length > 0"
           >
-            <v-card shaped width="max-content">
-              <v-card-text>
-                <v-row align="center">
-                  <v-col cols="mx-auto"
-                    >{{ fileUploadDownload.fileName }} ({{
-                      fileUploadDownload.fileSize
-                    }}MB)</v-col
-                  >
-                  <v-col cols="auto">
-                    <v-progress-circular
-                      :rotate="360"
-                      :size="50"
-                      :width="5"
-                      :value="fileUploadDownload.progress"
-                      v-if="fileUploadDownload.downloading"
-                      color="teal"
-                    >
-                      <v-btn
-                        icon
-                        @click="
-                          fileUploadDownload.isDownloader
-                            ? startDownload()
-                            : startUpload()
-                        "
-                      >
-                        <v-icon>mdi-cloud-download</v-icon>
-                      </v-btn>
-                    </v-progress-circular>
+            <v-row v-for="(file, index) in fileUploadDownload" :key="index">
+              <v-col
+                v-if="file.roomID == currentViewedRoom.roomID"
+                :align="file.isDownloader ? 'right' : 'left'"
+              >
+                <v-card shaped max-width="50%">
+                  <v-card-subtitle>
+                    <h3>
+                      {{ file.userID }}
+                    </h3>
+                  </v-card-subtitle>
 
-                    <v-progress-circular
-                      v-else
-                      :rotate="360"
-                      :size="50"
-                      :width="5"
-                      :value="fileUploadDownload.progress"
-                      color="teal"
-                    >
-                      <v-btn
-                        @click="
-                          fileUploadDownload.isDownloader
-                            ? stopDownload()
-                            : stopUpload()
-                        "
-                        depressed
-                        icon
+                  <v-card-text>
+                    <v-row align="center">
+                      <v-col cols="mx-auto"
+                        >{{ file.fileName }} ({{ file.fileSize }} MB)</v-col
                       >
-                        <v-icon>mdi-close</v-icon>
-                      </v-btn>
-                    </v-progress-circular>
-                  </v-col>
-                </v-row>
-              </v-card-text>
-            </v-card>
+                      <v-col cols="auto">
+                        <v-progress-circular
+                          :rotate="360"
+                          :size="50"
+                          :width="5"
+                          :value="file.progress"
+                          color="teal"
+                        >
+                          <v-btn
+                            icon
+                            @click="
+                              file.downloading
+                                ? stopFileProgress(file.fileHash)
+                                : startFileProgress(file.fileHash)
+                            "
+                          >
+                            <v-icon v-if="file.downloading">mdi-close</v-icon>
+                            <v-icon v-else-if="file.isDownloader"
+                              >mdi-cloud-download</v-icon
+                            >
+                            <v-icon v-else>mdi-cloud-upload</v-icon>
+                          </v-btn>
+                        </v-progress-circular>
+                      </v-col>
+                    </v-row>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
           </v-col>
         </v-row>
       </v-container>
@@ -399,6 +388,8 @@ export default Vue.extend({
     sendWSMessage: Function,
     clearFetchedUsers: Function,
     initiateFile: Function,
+    startFileProgress: Function,
+    stopFileProgress: Function,
   },
 
   data: () => ({
@@ -468,19 +459,10 @@ export default Vue.extend({
               result.toString()
             ).toString();
 
-            const message = {
-              msgType: WSMessageType.NewFileUpload,
-              userID: this.userID,
-              fileName: this.file.name,
-              fileHash: uniqueFileHash,
-              fileSize: (this.file.size / (1024 * 1024)).toString() + "MB",
-              fileType: this.file.type,
-            };
-
             const chunks = Math.ceil(this.file.size / DefaultChunkSize);
 
-            this.sendWSMessage(JSON.stringify(message));
             this.initiateFile(
+              this.userID,
               this.currentViewedRoom.roomID,
               this.file.name,
               this.file.size / (1024 * 1024),
@@ -492,12 +474,34 @@ export default Vue.extend({
             this.showTextField = true;
             this.showFileInput = false;
             this.file = new File([], "");
-            this.$forceUpdate();
+            this.scrollToBottomOfChatPage();
+            setTimeout(() => {
+              this.$forceUpdate();
+            }, 0);
+
+            const message = {
+              msgType: WSMessageType.NewFileUpload,
+              userID: this.userID,
+              fileName: this.file.name,
+              fileHash: uniqueFileHash,
+              fileSize: (this.file.size / (1024 * 1024)).toString() + "MB",
+              fileType: this.file.type,
+            };
+            this.sendWSMessage(JSON.stringify(message));
           }
         }
       };
 
       reader.readAsDataURL(this.file);
+    },
+
+    scrollToBottomOfChatPage: function () {
+      setTimeout(() => {
+        const scrollHeight = this.$el.querySelector("#messages");
+        if (scrollHeight) {
+          scrollHeight.scrollTop = scrollHeight.scrollHeight;
+        }
+      }, 0);
     },
 
     loadMoreMessages: function () {
@@ -540,6 +544,7 @@ export default Vue.extend({
     closeAddUserDialog: function () {
       this.selectedUsersToAddToRoom = [];
       this.showAddUsersDialog = false;
+
       this.clearFetchedUsers();
     },
 

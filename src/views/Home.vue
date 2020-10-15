@@ -139,6 +139,8 @@
             :fetchedUsers="fetchedUsers"
             :sendWSMessage="sendWSMessage"
             :currentViewedRoom="currentViewedRoom"
+            :stopFileProgress="stopFileProgress"
+            :startFileProgress="startFileProgress"
           />
         </v-col>
       </v-row>
@@ -284,7 +286,6 @@ export default Vue.extend({
     onNewMessage: function (message: Message) {
       this.updateRecentMessagePreview(message.roomID, message.message);
       if (this.currentViewedRoom.roomID === message.roomID) {
-        this.updateRoomContentPage();
         this.currentViewedRoom.messages.push(message);
         this.scrollToBottomOfChatPage();
         return;
@@ -378,8 +379,8 @@ export default Vue.extend({
             fileSize: fileDetails.fileSize.toString() + "MB",
             fileHash: fileDetails.fileHash,
           };
-
           socket.send(JSON.stringify(message));
+
           const infoMessage: Message = {
             time: "",
             size: "",
@@ -397,11 +398,11 @@ export default Vue.extend({
           if (this.currentViewedRoom.roomID === fileDetails.roomID)
             this.currentViewedRoom.messages.push(infoMessage);
 
-          this.updateChatRoomPage();
           return;
         }
 
         fileDetails.progress = (fileDetails.chunk / fileDetails.chunks) * 100;
+        this.updateChatRoomPage();
 
         if (fileDetails.downloading === false) {
           return;
@@ -482,6 +483,21 @@ export default Vue.extend({
       }
     },
 
+    stopFileProgress: function (fileHash: string) {
+      this.fileUploadDownload[fileHash].downloading = false;
+      this.updateChatRoomPage();
+    },
+
+    startFileProgress: function (fileHash: string) {
+      this.fileUploadDownload[fileHash].downloading = true;
+
+      if (!this.fileUploadDownload[fileHash].isDownloader) {
+        this.onUploadFileChunks(this.fileUploadDownload[fileHash]);
+      }
+
+      this.updateChatRoomPage();
+    },
+
     broadcastFileToRoom: function (completeFileDetails: FileUploadComplete) {
       const message: Message = {
         time: "",
@@ -498,11 +514,10 @@ export default Vue.extend({
       if (this.currentViewedRoom.roomID === completeFileDetails.roomID) {
         this.currentViewedRoom.messages.push(message);
       }
-
-      this.updateChatRoomPage();
     },
 
     initiateFile: function (
+      userID: string,
       roomID: string,
       fileName: string,
       fileSize: number,
@@ -511,6 +526,7 @@ export default Vue.extend({
       isDownload: boolean
     ) {
       this.fileUploadDownload[fileHash] = {
+        userID: this.userID,
         roomID: roomID,
         fileName: fileName,
         fileHash: fileHash,
@@ -528,12 +544,12 @@ export default Vue.extend({
       this.recentChatPreview[roomID] = message;
     },
 
-    updateRoomContentPage: function () {
-      this.$nextTick(this.$children[1].$forceUpdate);
-    },
-
     updateChatRoomPage: function () {
-      this.$nextTick(this.$children[2].$forceUpdate);
+      this.$nextTick(() => {
+        setTimeout(() => {
+          this.$children[2].$forceUpdate();
+        }, 0);
+      });
     },
 
     scrollToBottomOfChatPage: function () {
@@ -550,7 +566,6 @@ export default Vue.extend({
       addToUnreadNotifs: boolean
     ) {
       this.unreadRoomMessages[roomID] = addToUnreadNotifs;
-      this.updateRoomContentPage();
 
       let messageCount = 0;
       for (const room in this.unreadRoomMessages) {
@@ -650,7 +665,6 @@ export default Vue.extend({
 
     socket.onmessage = (event: MessageEvent) => {
       const jsonContent = JSON.parse(event.data);
-      console.log("Received");
 
       switch (jsonContent.msgType) {
         case WSMessageType.UnauthorizedAccess:
@@ -693,11 +707,6 @@ export default Vue.extend({
         case WSMessageType.OnlineStatus:
           if (this.usersOnline[jsonContent.userID]) {
             this.usersOnline[jsonContent.userID].isOnline = jsonContent.status;
-            console.log("updated");
-            if (this.showChatPage) {
-              console.log("final update");
-              this.updateChatRoomPage();
-            }
           }
           break;
 

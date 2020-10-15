@@ -61,6 +61,7 @@ export interface FileDownload {
 
 export interface FileUploadDownloadDetails {
     roomID: string;
+    userID: string;
     fileName: string;
     fileHash: string;
 

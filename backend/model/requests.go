@@ -364,11 +364,13 @@ func (msg messageBytes) handleUploadFileUploadComplete() {
 
 	if err != nil {
 		log.Errorln("error saving message content in handle upload file, err:", err)
+		return
 	}
 
 	jsonContent, err := json.Marshal(&data)
 	if err != nil {
 		log.Errorln(err)
+		return
 	}
 
 	for _, roomUser := range roomUsers {
