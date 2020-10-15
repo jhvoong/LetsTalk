@@ -473,7 +473,7 @@ export default Vue.extend({
               this.userID,
               this.currentViewedRoom.roomID,
               this.file.name,
-              this.file.size / (1024 * 1024),
+              (this.file.size / (1024 * 1024)).toPrecision(1),
               uniqueFileHash,
               chunks,
               false
@@ -482,9 +482,10 @@ export default Vue.extend({
             this.showTextField = true;
             this.showFileInput = false;
             this.file = new File([], "");
-            this.scrollToBottomOfChatPage();
+
             setTimeout(() => {
               this.$forceUpdate();
+              this.scrollToBottomOfChatPage();
             }, 0);
 
             const message = {
@@ -492,7 +493,7 @@ export default Vue.extend({
               userID: this.userID,
               fileName: this.file.name,
               fileHash: uniqueFileHash,
-              fileSize: (this.file.size / (1024 * 1024)).toString() + "MB",
+              fileSize: (this.file.size / (1024 * 1024)).toFixed(1).toString(),
               fileType: this.file.type,
             };
             this.sendWSMessage(JSON.stringify(message));
@@ -517,9 +518,10 @@ export default Vue.extend({
         0,
         true
       );
-      this.scrollToBottomOfChatPage();
+
       setTimeout(() => {
         this.$forceUpdate();
+        this.scrollToBottomOfChatPage();
       }, 0);
 
       const message = {
