@@ -478,7 +478,7 @@ export default Vue.extend({
               fileHash: uniqueFileHash,
               downloading: true,
               isDownloader: false,
-              fileSize: (this.file.size / (1024 * 1024)).toPrecision(1),
+              fileSize: (this.file.size / (1024 * 1024)).toFixed(),
               progress: 0,
               chunks: chunks,
               chunk: 0,
