@@ -213,7 +213,6 @@ func (s subscription) readPump(user string) {
 
 		switch data.MsgType {
 		// TODO: add support to remove message.
-		// TODO: users should choose if to join chat.
 		case values.WebsocketOpenMsgType:
 			handleLoadUserContent(user)
 

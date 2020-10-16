@@ -139,8 +139,7 @@
             :fetchedUsers="fetchedUsers"
             :sendWSMessage="sendWSMessage"
             :currentViewedRoom="currentViewedRoom"
-            :stopFileProgress="stopFileProgress"
-            :startFileProgress="startFileProgress"
+            :changeDownloadStatus="changeDownloadStatus"
           />
         </v-col>
       </v-row>
@@ -353,21 +352,19 @@ export default Vue.extend({
     },
 
     onUploadFileChunks: function (file: FileUploadDownloadDetails) {
-      console.log("sending another file chunk", file);
-
       if (
         this.fileUploadDownload[file.fileHash] &&
         !this.fileUploadDownload[file.fileHash].isDownloader
       ) {
         const fileDetails = this.fileUploadDownload[file.fileHash];
-        console.log("sending now");
         fileDetails.chunk = file.nextChunk;
 
         // If file is successfully downloaded, send a FileUploadSuccess message to server
         // so as to be broadcasted to other users.
-        if (fileDetails.chunk >= fileDetails.chunks) {
+        if (fileDetails.chunk == fileDetails.chunks) {
           fileDetails.downloading = false;
           fileDetails.progress = 100;
+          console.log("success");
 
           const message = {
             msgType: WSMessageType.FileUploadSuccess,
@@ -433,6 +430,8 @@ export default Vue.extend({
             chunkIndex: fileDetails.chunk,
           };
 
+          console.log("sending", fileDetails.chunk, "now");
+
           // Send new file upload information to server, chunk == 0 indicates a new file.
           if (fileDetails.chunk === 0) {
             socket.send(JSON.stringify(message));
@@ -461,39 +460,149 @@ export default Vue.extend({
             socket.send(JSON.stringify(message));
           };
 
-          if (this.$children.length > 2) {
+          if (fileDetails.fileContent) {
+            const fileContent = fileDetails.fileContent;
+
             recentFileChunkReader.readAsDataURL(
-              this.$children[2].$data.file.slice(
-                recentOffset,
-                recentOffset + DefaultChunkSize
-              )
+              fileContent.slice(recentOffset, recentOffset + DefaultChunkSize)
             );
           }
         };
 
-        if (this.$children.length > 2) {
+        if (fileDetails.fileContent) {
+          const fileContent = fileDetails.fileContent;
+
           reader.readAsDataURL(
-            this.$children[2].$data.file.slice(
-              offset,
-              offset + DefaultChunkSize
-            )
+            fileContent.slice(offset, offset + DefaultChunkSize)
           );
         }
       }
     },
 
-    stopFileProgress: function (fileHash: string) {
-      this.fileUploadDownload[fileHash].downloading = false;
-      this.updateChatRoomPage();
-    },
-
-    startFileProgress: function (fileHash: string) {
-      this.fileUploadDownload[fileHash].downloading = true;
-
-      if (!this.fileUploadDownload[fileHash].isDownloader) {
-        this.onUploadFileChunks(this.fileUploadDownload[fileHash]);
+    onDownloadFileChunk: function (fileDetails: FileUploadDownloadDetails) {
+      if (
+        !fileDetails.compressedFileHash ||
+        !this.fileUploadDownload[fileDetails.compressedFileHash]
+      ) {
+        console.log(
+          "Server sent an invalid hash on file download",
+          fileDetails
+        );
+        return;
       }
 
+      if (!fileDetails.fileChunk) {
+        console.log("Server sent a null file chunk.");
+        return;
+      }
+
+      const file = this.fileUploadDownload[fileDetails.compressedFileHash];
+
+      if (
+        fileDetails.fileChunk &&
+        fileDetails.fileHash !==
+          CryptoJS.SHA256(fileDetails.fileChunk).toString()
+      ) {
+        console.log("File hash incorrect.");
+        file.downloading = false;
+        this.updateChatRoomPage();
+
+        return;
+      }
+
+      fileDetails.fileChunk = fileDetails.fileChunk.substr(
+        fileDetails.fileChunk.indexOf(",") + 1
+      );
+
+      const byteCharacters = atob(fileDetails.fileChunk);
+      const byteArrays = [];
+
+      for (
+        let offset = 0;
+        offset < byteCharacters.length;
+        offset += DefaultChunkSize
+      ) {
+        const slice = byteCharacters.slice(offset, offset + DefaultChunkSize);
+        const byteNumbers = new Array(slice.length);
+
+        for (let i = 0; i < slice.length; i++) {
+          byteNumbers[i] = slice.charCodeAt(i);
+        }
+
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+      }
+
+      const blob = new Blob(byteArrays, { type: "" });
+      file.fileContent.push(blob);
+
+      if (file.chunk == file.chunks) {
+        this.downloadBlob(fileDetails.compressedFileHash);
+
+        delete this.fileUploadDownload[fileDetails.compressedFileHash];
+        this.updateChatRoomPage();
+        return;
+      }
+
+      if (file.downloading === false) {
+        console.log("file not downloading");
+        return;
+      }
+
+      file.chunk++;
+      file.progress = (file.chunk / file.chunks) * 100;
+
+      this.updateChatRoomPage();
+      const message = {
+        userID: this.userID,
+        msgType: WSMessageType.DownloadFileChunk,
+        fileName: file.fileName,
+        compressedFileHash: fileDetails.compressedFileHash,
+        chunkIndex: file.chunk,
+      };
+
+      socket.send(JSON.stringify(message));
+    },
+
+    onRequestDownload: function (fileDetails: FileUploadDownloadDetails) {
+      if (!fileDetails.fileHash) {
+        console.log("File hash empty on request download", fileDetails);
+        return;
+      }
+
+      const file = this.fileUploadDownload[fileDetails.fileHash];
+      file.downloading = true;
+      file.chunks = fileDetails.chunks;
+      this.updateChatRoomPage();
+
+      const message = {
+        userID: this.userID,
+        msgType: WSMessageType.DownloadFileChunk,
+        fileName: file.fileName,
+        // File hash of compressed file.
+        compressedFileHash: file.fileHash,
+        chunkIndex: file.chunk,
+      };
+      socket.send(JSON.stringify(message));
+    },
+
+    downloadBlob: function (fileHash: string) {
+      const file = this.fileUploadDownload[fileHash];
+      file.downloading = false;
+
+      const blobB = new Blob(file.fileContent, {
+        type: file.fileType,
+      });
+
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blobB);
+      a.download = file.fileName;
+      a.target = "_blank";
+      a.click();
+    },
+
+    changeDownloadStatus: function (fileHash: string, isDownloading: boolean) {
+      this.fileUploadDownload[fileHash].downloading = isDownloading;
       this.updateChatRoomPage();
     },
 
@@ -515,28 +624,9 @@ export default Vue.extend({
       }
     },
 
-    initiateFile: function (
-      userID: string,
-      roomID: string,
-      fileName: string,
-      fileSize: number,
-      fileHash: string,
-      chunks: number,
-      isDownload: boolean
-    ) {
-      this.fileUploadDownload[fileHash] = {
-        userID: this.userID,
-        roomID: roomID,
-        fileName: fileName,
-        fileHash: fileHash,
-        downloading: true,
-        isDownloader: isDownload,
-        fileSize: fileSize,
-        progress: 0,
-        chunks: chunks,
-        chunk: 0,
-        nextChunk: 0,
-      };
+    initiateFile: function (file: FileUploadDownloadDetails) {
+      this.fileUploadDownload[file.fileHash] = file;
+      console.log(this.fileUploadDownload);
     },
 
     updateRecentMessagePreview: function (roomID: string, message: string) {
@@ -725,6 +815,15 @@ export default Vue.extend({
           if (this.$children.length > 2) {
             this.$children[2].$emit("onUploadError");
           }
+          break;
+
+        case WSMessageType.FileRequestDownload:
+          this.onRequestDownload(jsonContent);
+          break;
+
+        case WSMessageType.DownloadFileChunk:
+          console.log("Downloading");
+          this.onDownloadFileChunk(jsonContent);
           break;
       }
     };

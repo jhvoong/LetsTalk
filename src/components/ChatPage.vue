@@ -215,7 +215,12 @@
                 <div align="center">
                   <v-chip
                     @click="
-                      downloadFile(message.hash, message.message, message.size)
+                      downloadFile(
+                        message.hash,
+                        message.message,
+                        message.size,
+                        message.type
+                      )
                     "
                   >
                     <b
@@ -271,11 +276,7 @@
                 v-if="file.roomID == currentViewedRoom.roomID"
                 :align="file.isDownloader ? 'right' : 'left'"
               >
-                <v-card
-                  :align="file.isDownloader ? 'left' : 'right'"
-                  shaped
-                  max-width="40%"
-                >
+                <v-card align="left" shaped max-width="40%">
                   <v-card-subtitle>
                     <h3>
                       {{ file.userID }}
@@ -377,7 +378,9 @@ import {
   FetchedUsers,
   UsersOnline,
   FileDownload,
+  FileUploadDownloadDetails,
 } from "../views/Types";
+
 import {
   WSMessageType,
   MessageType,
@@ -396,8 +399,7 @@ export default Vue.extend({
     sendWSMessage: Function,
     clearFetchedUsers: Function,
     initiateFile: Function,
-    startFileProgress: Function,
-    stopFileProgress: Function,
+    changeDownloadStatus: Function,
   },
 
   data: () => ({
@@ -469,15 +471,23 @@ export default Vue.extend({
 
             const chunks = Math.ceil(this.file.size / DefaultChunkSize);
 
-            this.initiateFile(
-              this.userID,
-              this.currentViewedRoom.roomID,
-              this.file.name,
-              (this.file.size / (1024 * 1024)).toPrecision(1),
-              uniqueFileHash,
-              chunks,
-              false
-            );
+            const file: FileUploadDownloadDetails = {
+              roomID: this.currentViewedRoom.roomID,
+              userID: this.userID,
+              fileName: this.file.name,
+              fileHash: uniqueFileHash,
+              downloading: true,
+              isDownloader: false,
+              fileSize: (this.file.size / (1024 * 1024)).toPrecision(1),
+              progress: 0,
+              chunks: chunks,
+              chunk: 0,
+              nextChunk: 0,
+              fileType: this.file.type,
+              fileContent: this.file,
+            };
+
+            this.initiateFile(file);
 
             this.showTextField = true;
             this.showFileInput = false;
@@ -488,15 +498,7 @@ export default Vue.extend({
               this.scrollToBottomOfChatPage();
             }, 0);
 
-            const message = {
-              msgType: WSMessageType.NewFileUpload,
-              userID: this.userID,
-              fileName: this.file.name,
-              fileHash: uniqueFileHash,
-              fileSize: (this.file.size / (1024 * 1024)).toFixed(1).toString(),
-              fileType: this.file.type,
-            };
-            this.sendWSMessage(JSON.stringify(message));
+            this.requestFileUpload(uniqueFileHash);
           }
         }
       };
@@ -507,23 +509,64 @@ export default Vue.extend({
     downloadFile: function (
       fileHash: string,
       fileName: string,
-      fileSize: string
+      fileSize: string,
+      fileType?: string
     ) {
-      this.initiateFile(
-        this.userID,
-        this.currentViewedRoom.roomID,
-        fileName,
-        fileSize,
-        fileHash,
-        0,
-        true
-      );
+      const file: FileUploadDownloadDetails = {
+        roomID: this.currentViewedRoom.roomID,
+        userID: this.userID,
+        fileName: fileName,
+        fileHash: fileHash,
+        downloading: true,
+        fileContent: [],
+        isDownloader: true,
+        fileSize: fileSize,
+        progress: 0,
+        chunks: 0,
+        chunk: 0,
+        nextChunk: 0,
+        fileType: fileType,
+      };
+
+      this.initiateFile(file);
 
       setTimeout(() => {
         this.$forceUpdate();
         this.scrollToBottomOfChatPage();
       }, 0);
 
+      this.requestFileDownload(fileName, fileHash);
+    },
+
+    startFileProgress: function (fileHash: string) {
+      const file = this.fileUploadDownload[fileHash];
+
+      if (file.isDownloader) {
+        this.requestFileDownload(file.fileName, file.fileHash);
+      } else {
+        this.requestFileUpload(fileHash);
+      }
+
+      this.changeDownloadStatus(fileHash, true);
+    },
+
+    stopFileProgress: function (fileHash: string) {
+      this.changeDownloadStatus(fileHash, false);
+    },
+
+    requestFileUpload: function (fileHash: string) {
+      const message = {
+        msgType: WSMessageType.NewFileUpload,
+        userID: this.userID,
+        fileName: this.fileUploadDownload[fileHash].fileName,
+        fileHash: this.fileUploadDownload[fileHash].fileHash,
+        fileSize: this.fileUploadDownload[fileHash].fileSize,
+        fileType: this.fileUploadDownload[fileHash].fileType,
+      };
+      this.sendWSMessage(JSON.stringify(message));
+    },
+
+    requestFileDownload: function (fileName: string, fileHash: string) {
       const message = {
         msgType: WSMessageType.FileRequestDownload,
         userID: this.userID,

@@ -63,16 +63,22 @@ export interface FileUploadDownloadDetails {
     roomID: string;
     userID: string;
     fileName: string;
+    fileType?: string;
     fileHash: string;
+    // File hash of compressed file if files are sent in chunks
+    compressedFileHash?: string;
 
     downloading: boolean;
     isDownloader: boolean;
+    fileSize: string;
 
-    fileSize: number;
     progress: number;
     chunks: number;
     chunk: number;
     nextChunk: number;
+
+    fileContent?: any;
+    fileChunk?: string,
 }
 
 export interface FileUploadComplete {
