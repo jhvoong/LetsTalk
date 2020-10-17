@@ -1,150 +1,155 @@
 <template>
-  <v-row no-gutters class="fill-height">
-    <v-col cols="1">
-      <SideBar
-        :activateAddRoomDialog="activateAddRoomDialog"
-        :activateNotificationDialog="activateNotificationDialog"
-        :deactivateAllDialogs="deactivateAllDialogs"
-        :unreadNotifications="unreadNotificationsCount"
-        :unreadRoomMessages="unreadRoomMessageCount"
-      />
-    </v-col>
+  <div v-if="callUI">
+    <h1><CallUI /></h1>
+  </div>
+  <div v-else>
+    <v-row no-gutters class="fill-height">
+      <v-col cols="1">
+        <SideBar
+          :activateAddRoomDialog="activateAddRoomDialog"
+          :activateNotificationDialog="activateNotificationDialog"
+          :deactivateAllDialogs="deactivateAllDialogs"
+          :unreadNotifications="unreadNotificationsCount"
+          :unreadRoomMessages="unreadRoomMessageCount"
+        />
+      </v-col>
 
-    <v-col cols="11">
-      <v-row
-        style="height: 100%"
-        align="center"
-        justify="center"
-        v-if="showNotificationDialog || showAddRoomDialog"
-      >
-        <v-card
-          v-if="showNotificationDialog"
-          height="min-content"
-          outlined
-          shaped
+      <v-col cols="11">
+        <v-row
+          style="height: 100%"
+          align="center"
+          justify="center"
+          v-if="showNotificationDialog || showAddRoomDialog"
         >
-          <v-row class="mx-5">
-            <v-col cols="12">
-              <v-card-title>
-                <b>Notifications</b>
-              </v-card-title>
-            </v-col>
+          <v-card
+            v-if="showNotificationDialog"
+            height="min-content"
+            outlined
+            shaped
+          >
+            <v-row class="mx-5">
+              <v-col cols="12">
+                <v-card-title>
+                  <b>Notifications</b>
+                </v-card-title>
+              </v-col>
 
-            <v-col cols="12">
-              <v-divider></v-divider>
-            </v-col>
+              <v-col cols="12">
+                <v-divider></v-divider>
+              </v-col>
 
-            <v-col cols="12">
-              <v-card-text>
-                <v-container
-                  fluid
-                  style="max-height: 72vh"
-                  class="overflow-y-auto"
-                >
-                  <v-card-subtitle v-if="joinRequests.length == 0"
-                    >No Notifications</v-card-subtitle
+              <v-col cols="12">
+                <v-card-text>
+                  <v-container
+                    fluid
+                    style="max-height: 72vh"
+                    class="overflow-y-auto"
                   >
-                  <v-card
-                    v-for="(joinRequest, index) in joinRequests"
-                    :key="index"
-                    flat
-                  >
-                    <v-card-text
-                      >{{ joinRequest.requestingUserName }} [{{
-                        joinRequest.requestingUserID
-                      }}] wants you to join room
-                      {{ joinRequest.roomName }}</v-card-text
+                    <v-card-subtitle v-if="joinRequests.length == 0"
+                      >No Notifications</v-card-subtitle
                     >
-                    <v-card-actions>
-                      <v-btn
-                        @click="
-                          joinRoom(
-                            joinRequest.requestingUserID,
-                            joinRequest.roomID,
-                            joinRequest.roomName,
-                            true,
-                            index
-                          )
-                        "
-                        text
-                        color="green"
-                        >Join</v-btn
+                    <v-card
+                      v-for="(joinRequest, index) in joinRequests"
+                      :key="index"
+                      flat
+                    >
+                      <v-card-text
+                        >{{ joinRequest.requestingUserName }} [{{
+                          joinRequest.requestingUserID
+                        }}] wants you to join room
+                        {{ joinRequest.roomName }}</v-card-text
                       >
+                      <v-card-actions>
+                        <v-btn
+                          @click="
+                            joinRoom(
+                              joinRequest.requestingUserID,
+                              joinRequest.roomID,
+                              joinRequest.roomName,
+                              true,
+                              index
+                            )
+                          "
+                          text
+                          color="green"
+                          >Join</v-btn
+                        >
 
-                      <v-btn
-                        @click="
-                          joinRoom(
-                            joinRequest.requestingUserID,
-                            joinRequest.roomID,
-                            joinRequest.roomName,
-                            false,
-                            index
-                          )
-                        "
-                        text
-                        color="red"
-                        >Reject</v-btn
-                      >
-                    </v-card-actions>
-                  </v-card>
-                </v-container>
-              </v-card-text>
-            </v-col>
-          </v-row>
-        </v-card>
+                        <v-btn
+                          @click="
+                            joinRoom(
+                              joinRequest.requestingUserID,
+                              joinRequest.roomID,
+                              joinRequest.roomName,
+                              false,
+                              index
+                            )
+                          "
+                          text
+                          color="red"
+                          >Reject</v-btn
+                        >
+                      </v-card-actions>
+                    </v-card>
+                  </v-container>
+                </v-card-text>
+              </v-col>
+            </v-row>
+          </v-card>
 
-        <v-card flat outlined shaped v-else-if="showAddRoomDialog">
-          <v-row class="mx-5">
-            <v-col cols="12">
-              <v-card-text>
-                <b>Create New Room</b>
-              </v-card-text>
-            </v-col>
+          <v-card flat outlined shaped v-else-if="showAddRoomDialog">
+            <v-row class="mx-5">
+              <v-col cols="12">
+                <v-card-text>
+                  <b>Create New Room</b>
+                </v-card-text>
+              </v-col>
 
-            <v-col cols="12">
-              <v-text-field
-                @keyup.enter.exact="createRoom()"
-                placeholder="Room Name"
-                rounded
-                outlined
-                v-model="newRoomName"
-              />
-              <v-btn @click="createRoom()" text color="green"
-                >Create Room</v-btn
-              >
-            </v-col>
-          </v-row>
-        </v-card>
-      </v-row>
+              <v-col cols="12">
+                <v-text-field
+                  @keyup.enter.exact="createRoom()"
+                  placeholder="Room Name"
+                  rounded
+                  outlined
+                  v-model="newRoomName"
+                />
+                <v-btn @click="createRoom()" text color="green"
+                  >Create Room</v-btn
+                >
+              </v-col>
+            </v-row>
+          </v-card>
+        </v-row>
 
-      <v-row v-else no-gutters>
-        <v-col cols="3">
-          <RoomsPage
-            :indexOfCurrentViewedRoom="indexOfCurrentViewedRoom"
-            :recentChatPreview="recentChatPreview"
-            :changeViewedRoomIndex="changeViewedRoomIndex"
-            :joinedRooms="joinedRooms"
-            :sendWSMessage="sendWSMessage"
-            :unreadRoomMessages="unreadRoomMessages"
-          />
-        </v-col>
+        <v-row v-else no-gutters>
+          <v-col cols="3">
+            <RoomsPage
+              :indexOfCurrentViewedRoom="indexOfCurrentViewedRoom"
+              :recentChatPreview="recentChatPreview"
+              :changeViewedRoomIndex="changeViewedRoomIndex"
+              :joinedRooms="joinedRooms"
+              :sendWSMessage="sendWSMessage"
+              :unreadRoomMessages="unreadRoomMessages"
+            />
+          </v-col>
 
-        <v-col cols="9">
-          <ChatPage
-            :initiateFile="initiateFile"
-            :fileUploadDownload="fileUploadDownload"
-            :associates="usersOnline"
-            v-if="showChatPage"
-            :clearFetchedUsers="clearFetchedUsers"
-            :fetchedUsers="fetchedUsers"
-            :sendWSMessage="sendWSMessage"
-            :currentViewedRoom="currentViewedRoom"
-            :changeDownloadStatus="changeDownloadStatus"
-          />
-        </v-col>
-      </v-row>
-    </v-col>
-  </v-row>
+          <v-col cols="9">
+            <ChatPage
+              :initiateFile="initiateFile"
+              :fileUploadDownload="fileUploadDownload"
+              :associates="usersOnline"
+              v-if="showChatPage"
+              :clearFetchedUsers="clearFetchedUsers"
+              :fetchedUsers="fetchedUsers"
+              :sendWSMessage="sendWSMessage"
+              :currentViewedRoom="currentViewedRoom"
+              :changeDownloadStatus="changeDownloadStatus"
+            />
+          </v-col>
+        </v-row>
+      </v-col>
+    </v-row>
+  </div>
 </template>
 
 <script lang="ts">
@@ -162,6 +167,7 @@ import { WSMessageType, MessageType, DefaultChunkSize } from "./Constants";
 import SideBar from "../components/SideBar.vue";
 import RoomsPage from "../components/RoomsPage.vue";
 import ChatPage from "../components/ChatPage.vue";
+import CallUI from "../components/CallUI.vue";
 
 import {
   JoinedRoom,
@@ -185,6 +191,7 @@ export default Vue.extend({
     SideBar,
     RoomsPage,
     ChatPage,
+    CallUI,
   },
 
   data: () => ({
@@ -197,6 +204,14 @@ export default Vue.extend({
     usersOnline: {} as UsersOnline,
     fileUploadDownload: {} as FileDownload,
 
+    peerConnection: new RTCPeerConnection({
+      iceServers: [
+        {
+          urls: ["stun:stun.l.google.com:19302"],
+        },
+      ],
+    }),
+
     userID: store.state.email,
     newRoomName: "",
     currentDownloadRoomID: "",
@@ -205,6 +220,7 @@ export default Vue.extend({
     showNotificationDialog: false,
     showChatPage: false,
     isFile: false,
+    callUI: false,
 
     indexOfCurrentViewedRoom: 0,
     unreadRoomMessageCount: 0,
