@@ -82,7 +82,7 @@
           </v-card>
         </v-menu>
 
-        <v-btn class="mx-2" icon x-large>
+        <v-btn @click="startCallSession" class="mx-2" icon x-large>
           <v-icon>mdi-video</v-icon>
         </v-btn>
 
@@ -400,6 +400,7 @@ export default Vue.extend({
     clearFetchedUsers: Function,
     initiateFile: Function,
     changeDownloadStatus: Function,
+    startCallSession: Function,
   },
 
   data: () => ({

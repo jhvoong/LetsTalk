@@ -14,12 +14,14 @@ const routes: Array<RouteConfig> = [
     component: Login,
     props: { isAdmin: false }
   },
+
   {
     path: '/admin/login',
     name: 'Admin Login',
     component: Login,
     props: { isAdmin: true }
   },
+
   {
     path: '/register',
     name: "User Registration",

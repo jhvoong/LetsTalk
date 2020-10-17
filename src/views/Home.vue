@@ -1,7 +1,5 @@
 <template>
-  <div v-if="callUI">
-    <h1><CallUI /></h1>
-  </div>
+  <CallUI v-if="callUI" :endCallSession="endCallSession" />
   <div v-else>
     <v-row no-gutters class="fill-height">
       <v-col cols="1">
@@ -144,6 +142,7 @@
               :sendWSMessage="sendWSMessage"
               :currentViewedRoom="currentViewedRoom"
               :changeDownloadStatus="changeDownloadStatus"
+              :startCallSession="startCallSession"
             />
           </v-col>
         </v-row>
@@ -365,6 +364,106 @@ export default Vue.extend({
 
         this.currentViewedRoom.messages.push(message);
       }
+    },
+
+    updateRecentMessagePreview: function (roomID: string, message: string) {
+      this.recentChatPreview[roomID] = message;
+    },
+
+    updateChatRoomPage: function () {
+      setTimeout(() => {
+        this.$children[2].$forceUpdate();
+      }, 0);
+    },
+
+    scrollToBottomOfChatPage: function () {
+      setTimeout(() => {
+        if (this.$children.length > 2) {
+          const scrollHeight = this.$children[2].$el.querySelector("#messages");
+          if (scrollHeight) scrollHeight.scrollTop = scrollHeight.scrollHeight;
+        }
+      }, 0);
+    },
+
+    changeNumberOfUnreadNotification: async function (
+      roomID: string,
+      addToUnreadNotifs: boolean
+    ) {
+      this.unreadRoomMessages[roomID] = addToUnreadNotifs;
+
+      let messageCount = 0;
+      for (const room in this.unreadRoomMessages) {
+        if (
+          this.unreadRoomMessages[room] &&
+          this.unreadRoomMessages[room] == true
+        )
+          messageCount++;
+      }
+
+      this.unreadRoomMessageCount = messageCount;
+    },
+
+    changeViewedRoomIndex: function (index: number) {
+      this.indexOfCurrentViewedRoom = index;
+      this.changeNumberOfUnreadNotification(
+        this.joinedRooms[index].roomID,
+        false
+      );
+    },
+
+    joinRoom: function (
+      requestingUserID: string,
+      roomID: string,
+      roomName: string,
+      joined: boolean,
+      index: number
+    ) {
+      const message = {
+        msgType: WSMessageType.JoinRoom,
+        userID: this.userID,
+        requesterID: requestingUserID,
+        joined: joined,
+        roomID: roomID,
+        roomName: roomName,
+      };
+
+      socket.send(JSON.stringify(message));
+      this.joinRequests.splice(index, 1);
+      this.unreadNotificationsCount = this.joinRequests.length;
+    },
+
+    createRoom: function () {
+      const message = {
+        userID: this.userID,
+        msgType: WSMessageType.CreateRoom,
+        roomName: this.newRoomName,
+      };
+
+      socket.send(JSON.stringify(message));
+      this.newRoomName = "";
+    },
+
+    activateAddRoomDialog: function () {
+      this.showAddRoomDialog = true;
+      this.showNotificationDialog = false;
+    },
+
+    clearFetchedUsers: function () {
+      this.fetchedUsers = [];
+    },
+
+    activateNotificationDialog: function () {
+      this.showNotificationDialog = true;
+      this.showAddRoomDialog = false;
+    },
+
+    deactivateAllDialogs: function () {
+      this.showAddRoomDialog = false;
+      this.showNotificationDialog = false;
+    },
+
+    sendWSMessage: function (message: string) {
+      socket.send(message);
     },
 
     onUploadFileChunks: function (file: FileUploadDownloadDetails) {
@@ -645,106 +744,12 @@ export default Vue.extend({
       console.log(this.fileUploadDownload);
     },
 
-    updateRecentMessagePreview: function (roomID: string, message: string) {
-      this.recentChatPreview[roomID] = message;
+    startCallSession: function () {
+      this.callUI = true;
     },
 
-    updateChatRoomPage: function () {
-      this.$nextTick(() => {
-        setTimeout(() => {
-          this.$children[2].$forceUpdate();
-        }, 0);
-      });
-    },
-
-    scrollToBottomOfChatPage: function () {
-      this.$nextTick(() => {
-        if (this.$children.length > 2) {
-          const scrollHeight = this.$children[2].$el.querySelector("#messages");
-          if (scrollHeight) scrollHeight.scrollTop = scrollHeight.scrollHeight;
-        }
-      });
-    },
-
-    changeNumberOfUnreadNotification: async function (
-      roomID: string,
-      addToUnreadNotifs: boolean
-    ) {
-      this.unreadRoomMessages[roomID] = addToUnreadNotifs;
-
-      let messageCount = 0;
-      for (const room in this.unreadRoomMessages) {
-        if (
-          this.unreadRoomMessages[room] &&
-          this.unreadRoomMessages[room] == true
-        )
-          messageCount++;
-      }
-
-      this.unreadRoomMessageCount = messageCount;
-    },
-
-    changeViewedRoomIndex: function (index: number) {
-      this.indexOfCurrentViewedRoom = index;
-      this.changeNumberOfUnreadNotification(
-        this.joinedRooms[index].roomID,
-        false
-      );
-    },
-
-    joinRoom: function (
-      requestingUserID: string,
-      roomID: string,
-      roomName: string,
-      joined: boolean,
-      index: number
-    ) {
-      const message = {
-        msgType: WSMessageType.JoinRoom,
-        userID: this.userID,
-        requesterID: requestingUserID,
-        joined: joined,
-        roomID: roomID,
-        roomName: roomName,
-      };
-
-      socket.send(JSON.stringify(message));
-      this.joinRequests.splice(index, 1);
-      this.unreadNotificationsCount = this.joinRequests.length;
-    },
-
-    createRoom: function () {
-      const message = {
-        userID: this.userID,
-        msgType: WSMessageType.CreateRoom,
-        roomName: this.newRoomName,
-      };
-
-      socket.send(JSON.stringify(message));
-      this.newRoomName = "";
-    },
-
-    activateAddRoomDialog: function () {
-      this.showAddRoomDialog = true;
-      this.showNotificationDialog = false;
-    },
-
-    clearFetchedUsers: function () {
-      this.fetchedUsers = [];
-    },
-
-    activateNotificationDialog: function () {
-      this.showNotificationDialog = true;
-      this.showAddRoomDialog = false;
-    },
-
-    deactivateAllDialogs: function () {
-      this.showAddRoomDialog = false;
-      this.showNotificationDialog = false;
-    },
-
-    sendWSMessage: function (message: string) {
-      socket.send(message);
+    endCallSession: function () {
+      this.callUI = false;
     },
   },
 

@@ -1,17 +1,29 @@
 <template>
   <div
     align="center"
-    style="display: grid; align-items: center; height: 100%; justify-content: center;"
+    style="
+      display: grid;
+      align-items: center;
+      height: 100%;
+      justify-content: center;
+    "
   >
     <v-form v-model="detailsValid">
       <v-row class="fill-height" justify="center" align="center">
         <v-col cols="12">
-          <v-img src="../assets/unilag.svg" contain height="300" width="300"></v-img>
+          <v-img
+            src="../assets/unilag.svg"
+            contain
+            height="300"
+            width="300"
+          ></v-img>
         </v-col>
 
         <v-col cols="12">
           <span v-if="isAdmin">Welcome Admin</span>
-          <span v-else>Welcome to the University of Lagos chatting platform</span>
+          <span v-else
+            >Welcome to the University of Lagos chatting platform</span
+          >
         </v-col>
 
         <v-col cols="12" sm="6">
@@ -39,11 +51,25 @@
             :disabled="detailsDisabled"
           ></v-text-field>
 
-          <v-alert v-if="signinErrorDetails" dense text type="error">{{signinErrorDetails}}</v-alert>
+          <v-alert v-if="signinErrorDetails" dense text type="error">{{
+            signinErrorDetails
+          }}</v-alert>
         </v-col>
         <v-col cols="12">
-          <v-btn @click="$router.push('/register')" color="green" class="mr-4" tile dark>Register</v-btn>
-          <v-btn @click="loginUser()" :disabled="detailsDisabled || !detailsValid" tile>Log in</v-btn>
+          <v-btn
+            @click="$router.push('/register')"
+            color="green"
+            class="mr-4"
+            tile
+            dark
+            >Register</v-btn
+          >
+          <v-btn
+            @click="loginUser()"
+            :disabled="detailsDisabled || !detailsValid"
+            tile
+            >Log in</v-btn
+          >
         </v-col>
       </v-row>
     </v-form>
@@ -121,6 +147,3 @@ export default Vue.extend({
   },
 });
 </script>
-
-<style>
-</style>
