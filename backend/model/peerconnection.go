@@ -143,17 +143,16 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 				}
 			}()
 
-			s.peerConnectionMutexes.RLock()
 			s.connectedUsersMutex.Lock()
+			users := s.connectedUsers[sessionID]
+			delete(s.connectedUsers, sessionID)
+			s.connectedUsersMutex.Unlock()
 
-			for _, user := range s.connectedUsers[sessionID] {
+			s.peerConnectionMutexes.RLock()
+			for _, user := range users {
 				closePeerConnection(s.peerConnection[user])
 				delete(s.peerConnection, user)
 			}
-
-			delete(s.connectedUsers, sessionID)
-
-			s.connectedUsersMutex.Unlock()
 			s.peerConnectionMutexes.RUnlock()
 
 			s.audioTrackMutexes.Lock()
@@ -426,7 +425,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 			// Confirm both video and audio track from publisher are both enabled and publisher is still up.
 			s.peerConnectionMutexes.RLock()
 
-			publisherPeerConnection := s.peerConnection[sdp.Author]
+			publisherPeerConnection := s.peerConnection[sdp.UserID]
 			if publisherPeerConnection == nil {
 				// Send back a JoinSessionError. Class session is closed.
 				closePeerConnection(peerConnection)
@@ -496,7 +495,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 
 					// Save other users sender track.
 					senderData := rtpSenderData{
-						userID: sdp.Author,
+						userID: sdp.UserID,
 						sender: sender}
 					s.audioTrackSender[audioTrack] = append(s.audioTrackSender[audioTrack], senderData)
 
@@ -576,7 +575,13 @@ func (s *classSessionPeerConnections) endClassSession(user string) {
 		return
 	}
 
-	HubConstruct.sendMessage(jsonContent, user)
+	s.connectedUsersMutex.Lock()
+	users := s.connectedUsers[user]
+	s.connectedUsersMutex.Unlock()
+
+	for _, user := range users {
+		HubConstruct.sendMessage(jsonContent, user)
+	}
 }
 
 func (sdp sdpConstruct) negotiate() error {

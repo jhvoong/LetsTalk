@@ -205,7 +205,6 @@ type webmWriter struct {
 type sdpConstruct struct {
 	MsgType        string `json:"msgType"`
 	ClassSessionID string `json:"sessionID"`
-	Author         string `json:"author"`
 	AuthorName     string `json:"name"`
 	UserID         string `json:"userID"`
 	RoomID         string `json:"roomID"`
