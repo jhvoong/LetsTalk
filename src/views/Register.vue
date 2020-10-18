@@ -1,16 +1,28 @@
 <template>
   <div
     align="center"
-    style="display: grid; align-items: center; height: 100%; justify-content: center;"
+    style="
+      display: grid;
+      align-items: center;
+      height: 100%;
+      justify-content: center;
+    "
   >
     <v-form v-model="dataIsValid">
       <v-row class="fill-height" justify="center" align="center">
         <v-col cols="12">
-          <v-img src="../assets/unilag.svg" contain height="300" width="300"></v-img>
+          <v-img
+            src="../assets/unilag.svg"
+            contain
+            height="300"
+            width="300"
+          ></v-img>
         </v-col>
 
         <v-col class="text-center" cols="12">
-          <span class="text-center mx-auto">Welcome to the University of Lagos chatting platform</span>
+          <span class="text-center mx-auto"
+            >Welcome to the University of Lagos chatting platform</span
+          >
         </v-col>
 
         <v-col cols="12" sm="6">
@@ -19,9 +31,9 @@
             outlined
             filled
             type="email"
-            :rules="emailRules"
             required
             placeholder="Email Address"
+            :rules="emailRules"
             :disabled="detailsDisabled"
           ></v-text-field>
 
@@ -68,20 +80,33 @@
                 v-on="on"
               ></v-text-field>
             </template>
-            <v-date-picker v-model="DOB" no-title @input="datePickerMenu = false"></v-date-picker>
+            <v-date-picker
+              v-model="DOB"
+              no-title
+              @input="datePickerMenu = false"
+            ></v-date-picker>
           </v-menu>
 
-          <v-alert
-            v-if="registrationErrorDetails"
-            dense
-            text
-            type="error"
-          >{{registrationErrorDetails}}</v-alert>
+          <v-alert v-if="registrationErrorDetails" dense text type="error">{{
+            registrationErrorDetails
+          }}</v-alert>
         </v-col>
 
         <v-col cols="12">
-          <v-btn class="mr-4" dark @click="$router.push('/login')" color="green" tile>Log In</v-btn>
-          <v-btn @click="registerUser()" :disabled="detailsDisabled || !dataIsValid" tile>Register</v-btn>
+          <v-btn
+            class="mr-4"
+            dark
+            @click="$router.push('/login')"
+            color="green"
+            tile
+            >Log In</v-btn
+          >
+          <v-btn
+            @click="registerUser()"
+            :disabled="detailsDisabled || !dataIsValid"
+            tile
+            >Register</v-btn
+          >
         </v-col>
       </v-row>
     </v-form>

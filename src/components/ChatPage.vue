@@ -245,7 +245,7 @@
                 cols="12"
               >
                 <div align="center">
-                  <v-chip href="https://github.com/metaclips">
+                  <v-chip @click="joinCallSession">
                     <b
                       >Class session started by {{ message.name }}. Click to
                       join.</b
@@ -401,6 +401,7 @@ export default Vue.extend({
     initiateFile: Function,
     changeDownloadStatus: Function,
     startCallSession: Function,
+    joinCallSession: Function,
   },
 
   data: () => ({

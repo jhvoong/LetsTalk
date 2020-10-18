@@ -133,16 +133,17 @@
 
           <v-col cols="9">
             <ChatPage
+              v-if="showChatPage"
               :initiateFile="initiateFile"
               :fileUploadDownload="fileUploadDownload"
               :associates="usersOnline"
-              v-if="showChatPage"
               :clearFetchedUsers="clearFetchedUsers"
               :fetchedUsers="fetchedUsers"
               :sendWSMessage="sendWSMessage"
               :currentViewedRoom="currentViewedRoom"
               :changeDownloadStatus="changeDownloadStatus"
               :startCallSession="startCallSession"
+              :joinCallSession="joinCallSession"
             />
           </v-col>
         </v-row>
@@ -155,6 +156,9 @@
 "use strict";
 
 let socket: WebSocket;
+let videoTransceiver: RTCRtpTransceiver;
+let audioTransceiver: RTCRtpTransceiver;
+
 // @ is an alias to /src
 import Vue from "vue";
 import store from "@/store";
@@ -213,8 +217,6 @@ export default Vue.extend({
 
     videoTrack: new MediaStreamTrack(),
     audioTrack: new MediaStreamTrack(),
-    videoTransceiver: new RTCRtpTransceiver(),
-    audioTransceiver: new RTCRtpTransceiver(),
     stream: new MediaStream(),
 
     userID: store.state.email,
@@ -792,19 +794,15 @@ export default Vue.extend({
         this.videoTrack = e.getVideoTracks()[0];
         this.audioTrack = e.getAudioTracks()[0];
 
-        this.audioTransceiver = this.peerConnection.addTransceiver(
-          this.audioTrack,
-          { direction: "sendrecv" }
-        );
+        audioTransceiver = this.peerConnection.addTransceiver(this.audioTrack, {
+          direction: "sendrecv",
+        });
 
-        this.videoTransceiver = this.peerConnection.addTransceiver(
-          this.videoTrack,
-          { direction: "sendrecv" }
-        );
+        videoTransceiver = this.peerConnection.addTransceiver(this.videoTrack, {
+          direction: "sendrecv",
+        });
 
-        const el: HTMLVideoElement = <HTMLVideoElement>(
-          document.getElementById("videoID")
-        );
+        const el = document.getElementById("videoID") as HTMLVideoElement;
 
         if (!el) {
           console.log("Could not get video ID element");
@@ -888,14 +886,11 @@ export default Vue.extend({
       const MediaConstraints = { audio: true };
       this.getUserMedia(MediaConstraints, (e: MediaStream) => {
         this.audioTrack = e.getAudioTracks()[0];
-        this.audioTransceiver = this.peerConnection.addTransceiver(
-          this.audioTrack,
-          { direction: "sendrecv" }
-        );
+        audioTransceiver = this.peerConnection.addTransceiver(this.audioTrack, {
+          direction: "sendrecv",
+        });
 
-        const el: HTMLVideoElement = <HTMLVideoElement>(
-          document.getElementById("videoID")
-        );
+        const el = document.getElementById("videoID") as HTMLVideoElement;
 
         if (!el) {
           console.log("Could not get video ID element");
@@ -951,13 +946,13 @@ export default Vue.extend({
       if (this.audioTrack) {
         this.audioTrack.enabled = false;
         this.audioTrack.stop();
-        this.audioTransceiver.stop();
+        audioTransceiver.stop();
       }
 
       if (this.videoTrack) {
         this.videoTrack.enabled = false;
         this.videoTrack.stop();
-        this.videoTransceiver.stop();
+        videoTransceiver.stop();
       }
 
       this.peerConnection.close();
