@@ -55,6 +55,7 @@
             signinErrorDetails
           }}</v-alert>
         </v-col>
+
         <v-col cols="12">
           <v-btn
             @click="$router.push('/register')"

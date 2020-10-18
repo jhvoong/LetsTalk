@@ -16,6 +16,9 @@ export const WSMessageType = {
     FileUploadSuccess: "FileUploadSuccess",
     FileRequestDownload: "RequestDownload",
     DownloadFileChunk: "DownloadFileChunk",
+    StartClassSession: "StartClassSession",
+    JoinClassSession: "JoinClassSession",
+    EndClassSession: "EndClassSession",
 }
 
 export const DefaultChunkSize = 125 * 1024

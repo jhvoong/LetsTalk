@@ -211,6 +211,12 @@ export default Vue.extend({
       ],
     }),
 
+    videoTrack: new MediaStreamTrack(),
+    audioTrack: new MediaStreamTrack(),
+    videoTransceiver: new RTCRtpTransceiver(),
+    audioTransceiver: new RTCRtpTransceiver(),
+    stream: new MediaStream(),
+
     userID: store.state.email,
     newRoomName: "",
     currentDownloadRoomID: "",
@@ -220,6 +226,7 @@ export default Vue.extend({
     showChatPage: false,
     isFile: false,
     callUI: false,
+    isPublisher: false,
 
     indexOfCurrentViewedRoom: 0,
     unreadRoomMessageCount: 0,
@@ -741,15 +748,242 @@ export default Vue.extend({
 
     initiateFile: function (file: FileUploadDownloadDetails) {
       this.fileUploadDownload[file.fileHash] = file;
-      console.log(this.fileUploadDownload);
     },
 
     startCallSession: function () {
       this.callUI = true;
+      this.isPublisher = true;
+
+      this.peerConnection.oniceconnectionstatechange = () => {
+        console.log(this.peerConnection.iceConnectionState);
+
+        if (this.peerConnection.iceConnectionState === "failed") {
+          // Show error page so that users can choose to disconnect call.
+        }
+      };
+
+      this.peerConnection.onicecandidate = (event) => {
+        if (
+          event.candidate === null &&
+          this.peerConnection.localDescription &&
+          this.peerConnection.iceConnectionState === "new"
+        ) {
+          const message = {
+            msgType: WSMessageType.StartClassSession,
+            sdp: this.peerConnection.localDescription.sdp,
+            roomID: this.currentViewedRoom.roomID,
+            userID: this.userID,
+          };
+
+          socket.send(JSON.stringify(message));
+        }
+      };
+
+      this.peerConnection.onnegotiationneeded = (event) => {
+        console.log("Negotiation needed", event);
+      };
+
+      const MediaConstraints = {
+        video: { width: 640, height: 480 },
+        audio: true,
+      };
+
+      this.getUserMedia(MediaConstraints, (e: MediaStream) => {
+        this.videoTrack = e.getVideoTracks()[0];
+        this.audioTrack = e.getAudioTracks()[0];
+
+        this.audioTransceiver = this.peerConnection.addTransceiver(
+          this.audioTrack,
+          { direction: "sendrecv" }
+        );
+
+        this.videoTransceiver = this.peerConnection.addTransceiver(
+          this.videoTrack,
+          { direction: "sendrecv" }
+        );
+
+        const el: HTMLVideoElement = <HTMLVideoElement>(
+          document.getElementById("videoID")
+        );
+
+        if (!el) {
+          console.log("Could not get video ID element");
+          return;
+        }
+
+        const mediaStreamTrack = [this.videoTrack, this.audioTrack];
+        this.stream = new MediaStream(mediaStreamTrack);
+
+        el.srcObject = this.stream;
+        el.autoplay = true;
+
+        this.peerConnection
+          .createOffer()
+          .then((sdp) => {
+            this.peerConnection.setLocalDescription(sdp);
+          })
+          .catch((log) =>
+            console.log("Error creating peer connection offer, error:", log)
+          );
+      });
+
+      this.peerConnection.ontrack = ({ transceiver, streams: [event] }) => {
+        event.onaddtrack = (event) => {
+          console.log("On add track called for start video session.");
+          this.stream.addTrack(event.track);
+        };
+
+        event.onremovetrack = (event) => {
+          console.log("On remove track called for start video session.");
+          this.stream.removeTrack(event.track);
+        };
+
+        transceiver.receiver.track.onmute = () =>
+          console.log("Track muted for start session.");
+        transceiver.receiver.track.onended = () =>
+          console.log("Track ended for start session");
+        transceiver.receiver.track.onunmute = () => {
+          console.log("Track started for start session.");
+          this.stream.addTrack(transceiver.receiver.track);
+        };
+      };
+    },
+
+    joinCallSession: function (sessionData: Message) {
+      this.callUI = true;
+      this.isPublisher = false;
+
+      this.peerConnection.oniceconnectionstatechange = () => {
+        console.log(this.peerConnection.iceConnectionState);
+
+        if (this.peerConnection.iceConnectionState === "failed") {
+          //TODO: Show error page so that users can choose to disconnect call.
+        }
+      };
+
+      this.peerConnection.onnegotiationneeded = (event) => {
+        console.log("Negotiation needed", event);
+      };
+
+      this.peerConnection.onicecandidate = (event) => {
+        if (
+          event.candidate == null &&
+          this.peerConnection.localDescription &&
+          this.peerConnection.iceConnectionState === "new"
+        ) {
+          console.log("Calling join class session");
+
+          const message = {
+            msgType: WSMessageType.JoinClassSession,
+            sdp: this.peerConnection.localDescription.sdp,
+            roomID: this.currentViewedRoom.roomID,
+            userID: this.userID,
+            author: this.userID,
+            sessionID: sessionData.hash,
+          };
+          socket.send(JSON.stringify(message));
+        }
+      };
+
+      const MediaConstraints = { audio: true };
+      this.getUserMedia(MediaConstraints, (e: MediaStream) => {
+        this.audioTrack = e.getAudioTracks()[0];
+        this.audioTransceiver = this.peerConnection.addTransceiver(
+          this.audioTrack,
+          { direction: "sendrecv" }
+        );
+
+        const el: HTMLVideoElement = <HTMLVideoElement>(
+          document.getElementById("videoID")
+        );
+
+        if (!el) {
+          console.log("Could not get video ID element");
+          return;
+        }
+
+        const mediaStreamTrack = [this.videoTrack, this.audioTrack];
+        this.stream = new MediaStream(mediaStreamTrack);
+
+        el.srcObject = this.stream;
+        el.autoplay = true;
+        this.peerConnection
+          .createOffer()
+          .then((sdp) => {
+            this.peerConnection.setLocalDescription(sdp);
+          })
+          .catch((log) =>
+            console.log("Error creating offer on join session, error:", log)
+          );
+      });
+
+      this.peerConnection.ontrack = ({ transceiver, streams: [event] }) => {
+        event.onaddtrack = (event) => {
+          console.log("On add track called for join video session");
+          this.stream.addTrack(event.track);
+        };
+
+        event.onremovetrack = (event) => {
+          console.log("On remove track called for join video session.");
+          this.stream.removeTrack(event.track);
+        };
+
+        transceiver.receiver.track.onmute = () =>
+          console.log("Track muted for join session");
+
+        transceiver.receiver.track.onended = () =>
+          console.log("Track ended for Join session");
+
+        transceiver.receiver.track.onunmute = () => {
+          if (transceiver.receiver.track.kind === "video")
+            console.log("Track unmuted");
+
+          console.log("Track started for Join session");
+          this.stream.addTrack(transceiver.receiver.track);
+        };
+      };
     },
 
     endCallSession: function () {
       this.callUI = false;
+      this.isPublisher = false;
+
+      if (this.audioTrack) {
+        this.audioTrack.enabled = false;
+        this.audioTrack.stop();
+        this.audioTransceiver.stop();
+      }
+
+      if (this.videoTrack) {
+        this.videoTrack.enabled = false;
+        this.videoTrack.stop();
+        this.videoTransceiver.stop();
+      }
+
+      this.peerConnection.close();
+      // Send websocket close message to server.
+      if (this.isPublisher) {
+        const message = {
+          msgType: WSMessageType.EndClassSession,
+          userID: this.userID,
+        };
+
+        socket.send(JSON.stringify(message));
+      }
+    },
+
+    getUserMedia: function (
+      mediaConstraints: MediaStreamConstraints,
+      onMedia: Function
+    ) {
+      navigator.mediaDevices
+        .getUserMedia(mediaConstraints)
+        .then(function (e) {
+          onMedia(e);
+        })
+        .catch(function (error) {
+          console.log("Error getting media device, error:", error);
+        });
     },
   },
 
