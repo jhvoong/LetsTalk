@@ -1,3 +1,16 @@
+declare global {
+    export interface MediaDevices {
+        getDisplayMedia(constraints?: MediaStreamConstraints): Promise<MediaStream>;
+    }
+
+    // if constraints config still lose some prop, you can define it by yourself also
+    export interface MediaTrackConstraintSet {
+        displaySurface?: ConstrainDOMString;
+        logicalSurface?: ConstrainBoolean;
+        // more....
+    }
+}
+
 export interface RoomDetails {
     roomID: string;
     roomName: string;
@@ -43,14 +56,14 @@ export interface RoomPageDetails {
 }
 
 export interface Message {
-    time: string;
-    type: string; // Type denotes the message type, if INFO, FILE or MESSAGE type.
+    time?: string;
+    type?: string; // Type denotes the message type, if INFO, FILE or MESSAGE type.
     name: string;
     userID: string;
     roomID: string;
     message: string;
-    size: string;
-    hash: string;
+    size?: string;
+    hash?: string;
 
     index: number;
 }

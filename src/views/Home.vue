@@ -1,5 +1,13 @@
 <template>
-  <CallUI v-if="callUI" :endCallSession="endCallSession" />
+  <CallUI
+    v-if="callUI"
+    :endCallSession="endCallSession"
+    :changeAudio="changeAudio"
+    :changeVideo="changeVideo"
+    :isCallPublisher="isPublisher"
+    :startDesktopSharing="startDesktopSharing"
+    :stopDesktopSharing="stopDesktopSharing"
+  />
   <div v-else>
     <v-row no-gutters class="fill-height">
       <v-col cols="1">
@@ -159,6 +167,10 @@ let socket: WebSocket;
 let videoTransceiver: RTCRtpTransceiver;
 let audioTransceiver: RTCRtpTransceiver;
 
+let videoTrack: MediaStreamTrack;
+let audioTrack: MediaStreamTrack;
+let stream: MediaStream;
+
 // @ is an alias to /src
 import Vue from "vue";
 import store from "@/store";
@@ -214,10 +226,6 @@ export default Vue.extend({
         },
       ],
     }),
-
-    videoTrack: new MediaStreamTrack(),
-    audioTrack: new MediaStreamTrack(),
-    stream: new MediaStream(),
 
     userID: store.state.email,
     newRoomName: "",
@@ -791,14 +799,14 @@ export default Vue.extend({
       };
 
       this.getUserMedia(MediaConstraints, (e: MediaStream) => {
-        this.videoTrack = e.getVideoTracks()[0];
-        this.audioTrack = e.getAudioTracks()[0];
+        videoTrack = e.getVideoTracks()[0];
+        audioTrack = e.getAudioTracks()[0];
 
-        audioTransceiver = this.peerConnection.addTransceiver(this.audioTrack, {
+        audioTransceiver = this.peerConnection.addTransceiver(audioTrack, {
           direction: "sendrecv",
         });
 
-        videoTransceiver = this.peerConnection.addTransceiver(this.videoTrack, {
+        videoTransceiver = this.peerConnection.addTransceiver(videoTrack, {
           direction: "sendrecv",
         });
 
@@ -809,10 +817,10 @@ export default Vue.extend({
           return;
         }
 
-        const mediaStreamTrack = [this.videoTrack, this.audioTrack];
-        this.stream = new MediaStream(mediaStreamTrack);
+        const mediaStreamTrack = [videoTrack, audioTrack];
+        stream = new MediaStream(mediaStreamTrack);
 
-        el.srcObject = this.stream;
+        el.srcObject = stream;
         el.autoplay = true;
 
         this.peerConnection
@@ -828,12 +836,12 @@ export default Vue.extend({
       this.peerConnection.ontrack = ({ transceiver, streams: [event] }) => {
         event.onaddtrack = (event) => {
           console.log("On add track called for start video session.");
-          this.stream.addTrack(event.track);
+          stream.addTrack(event.track);
         };
 
         event.onremovetrack = (event) => {
           console.log("On remove track called for start video session.");
-          this.stream.removeTrack(event.track);
+          stream.removeTrack(event.track);
         };
 
         transceiver.receiver.track.onmute = () =>
@@ -842,7 +850,7 @@ export default Vue.extend({
           console.log("Track ended for start session");
         transceiver.receiver.track.onunmute = () => {
           console.log("Track started for start session.");
-          this.stream.addTrack(transceiver.receiver.track);
+          stream.addTrack(transceiver.receiver.track);
         };
       };
     },
@@ -885,8 +893,8 @@ export default Vue.extend({
 
       const MediaConstraints = { audio: true };
       this.getUserMedia(MediaConstraints, (e: MediaStream) => {
-        this.audioTrack = e.getAudioTracks()[0];
-        audioTransceiver = this.peerConnection.addTransceiver(this.audioTrack, {
+        audioTrack = e.getAudioTracks()[0];
+        audioTransceiver = this.peerConnection.addTransceiver(audioTrack, {
           direction: "sendrecv",
         });
 
@@ -897,10 +905,10 @@ export default Vue.extend({
           return;
         }
 
-        const mediaStreamTrack = [this.videoTrack, this.audioTrack];
-        this.stream = new MediaStream(mediaStreamTrack);
+        const mediaStreamTrack = [videoTrack, audioTrack];
+        stream = new MediaStream(mediaStreamTrack);
 
-        el.srcObject = this.stream;
+        el.srcObject = stream;
         el.autoplay = true;
         this.peerConnection
           .createOffer()
@@ -915,12 +923,12 @@ export default Vue.extend({
       this.peerConnection.ontrack = ({ transceiver, streams: [event] }) => {
         event.onaddtrack = (event) => {
           console.log("On add track called for join video session");
-          this.stream.addTrack(event.track);
+          stream.addTrack(event.track);
         };
 
         event.onremovetrack = (event) => {
           console.log("On remove track called for join video session.");
-          this.stream.removeTrack(event.track);
+          stream.removeTrack(event.track);
         };
 
         transceiver.receiver.track.onmute = () =>
@@ -934,7 +942,7 @@ export default Vue.extend({
             console.log("Track unmuted");
 
           console.log("Track started for Join session");
-          this.stream.addTrack(transceiver.receiver.track);
+          stream.addTrack(transceiver.receiver.track);
         };
       };
     },
@@ -943,15 +951,15 @@ export default Vue.extend({
       this.callUI = false;
       this.isPublisher = false;
 
-      if (this.audioTrack) {
-        this.audioTrack.enabled = false;
-        this.audioTrack.stop();
+      if (audioTrack) {
+        audioTrack.enabled = false;
+        audioTrack.stop();
         audioTransceiver.stop();
       }
 
-      if (this.videoTrack) {
-        this.videoTrack.enabled = false;
-        this.videoTrack.stop();
+      if (videoTrack) {
+        videoTrack.enabled = false;
+        videoTrack.stop();
         videoTransceiver.stop();
       }
 
@@ -979,6 +987,69 @@ export default Vue.extend({
         .catch(function (error) {
           console.log("Error getting media device, error:", error);
         });
+    },
+
+    changeVideo: function () {
+      videoTrack.enabled = !videoTrack.enabled;
+
+      videoTrack.enabled
+        ? videoTransceiver.sender.replaceTrack(videoTrack)
+        : videoTransceiver.sender.replaceTrack(null);
+    },
+
+    changeAudio: function () {
+      audioTrack.enabled = !audioTrack.enabled;
+      audioTrack.enabled
+        ? audioTransceiver.sender.replaceTrack(audioTrack)
+        : audioTransceiver.sender.replaceTrack(null);
+    },
+
+    startDesktopSharing: function () {
+      // 480p video constraints.
+      const mediaConstraints = { video: { width: 640, height: 480 } };
+
+      navigator.mediaDevices
+        .getDisplayMedia(mediaConstraints)
+        .then((event) => {
+          // Disable webcam and remove video from stream.
+          videoTrack.enabled = false;
+          stream.removeTrack(videoTrack);
+
+          const tracks = event.getVideoTracks();
+          this.addTracks(tracks);
+
+          if (tracks.length > 0) {
+            videoTransceiver.sender.replaceTrack(tracks[0]);
+          } else {
+            console.log("Could not find any track for desktop sharing");
+          }
+        })
+        .catch((error) => {
+          console.log("Error creating desktop sharing", error);
+        });
+    },
+
+    stopDesktopSharing: function (isVideoOn: boolean) {
+      const tracks = stream.getVideoTracks();
+      this.removeTracks(tracks);
+
+      videoTrack.enabled = isVideoOn;
+      stream.addTrack(videoTrack);
+
+      videoTransceiver.sender.replaceTrack(videoTrack);
+    },
+
+    removeTracks: function (tracks: MediaStreamTrack[]) {
+      for (let i = 0; i < tracks.length; i++) {
+        tracks[i].enabled = false;
+        stream.removeTrack(tracks[i]);
+      }
+    },
+
+    addTracks: function (tracks: MediaStreamTrack[]) {
+      for (let i = 0; i < tracks.length; i++) {
+        stream.addTrack(tracks[i]);
+      }
     },
   },
 
@@ -1074,6 +1145,66 @@ export default Vue.extend({
         case WSMessageType.DownloadFileChunk:
           console.log("Downloading");
           this.onDownloadFileChunk(jsonContent);
+          break;
+
+        case WSMessageType.ClassSession:
+          if (this.currentViewedRoom.roomID === jsonContent.roomID) {
+            this.currentViewedRoom.messages.push({
+              type: MessageType.ClassSession,
+              name: jsonContent.name,
+              userID: jsonContent.userID,
+              hash: jsonContent.sessionID,
+              index: this.currentViewedRoom.messages.length + 1,
+              roomID: jsonContent.roomID,
+              message: "",
+            });
+            this.scrollToBottomOfChatPage();
+          }
+          break;
+
+        case WSMessageType.Negotiate:
+          if (this.peerConnection) {
+            console.log("Negotiating peer connection");
+
+            try {
+              this.peerConnection.setRemoteDescription(
+                new RTCSessionDescription({
+                  type: "answer",
+                  sdp: jsonContent.sdp,
+                })
+              );
+            } catch (e) {
+              console.log("Error setting remote description");
+              // TODO: Set modal error here.
+            }
+          }
+          break;
+
+        case WSMessageType.RenegotiateSDP:
+          console.log("Renegotiating SDP");
+
+          if (this.peerConnection && jsonContent.sessionID !== "") {
+            this.peerConnection.setRemoteDescription(
+              new RTCSessionDescription({ type: "offer", sdp: jsonContent.sdp })
+            );
+
+            this.peerConnection
+              .createAnswer()
+              .then((sdp) => {
+                this.peerConnection.setLocalDescription(sdp).then(() => {
+                  const message = {
+                    msgType: "RenegotiateSDP",
+                    sdp: sdp.sdp,
+                    userID: this.userID,
+                  };
+
+                  socket.send(JSON.stringify(message));
+                });
+              })
+              .catch((e) =>
+                console.log("Error renegotiating peerconnection, error: ", e)
+              );
+          }
           break;
       }
     };

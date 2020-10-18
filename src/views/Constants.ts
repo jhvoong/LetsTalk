@@ -17,8 +17,12 @@ export const WSMessageType = {
     FileRequestDownload: "RequestDownload",
     DownloadFileChunk: "DownloadFileChunk",
     StartClassSession: "StartClassSession",
+    ClassSession: "ClassSession",
+    ClassSessionLink: "ClassSessionLink",
     JoinClassSession: "JoinClassSession",
     EndClassSession: "EndClassSession",
+    Negotiate: "Negotiate",
+    RenegotiateSDP: "RenegotiateSDP",
 }
 
 export const DefaultChunkSize = 125 * 1024

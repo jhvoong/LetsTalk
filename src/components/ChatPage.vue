@@ -240,12 +240,9 @@
                 </div>
               </v-col>
 
-              <v-col
-                v-if="message.type === messageType.ClassSessionLink"
-                cols="12"
-              >
+              <v-col v-if="message.type === messageType.ClassSession" cols="12">
                 <div align="center">
-                  <v-chip @click="joinCallSession">
+                  <v-chip @click="joinCallSession()">
                     <b
                       >Class session started by {{ message.name }}. Click to
                       join.</b
@@ -254,9 +251,12 @@
                 </div>
               </v-col>
 
-              <v-col v-if="message.type === messageType.ClassSession" cols="12">
+              <v-col
+                v-if="message.type === messageType.ClassSessionLink"
+                cols="12"
+              >
                 <div align="center">
-                  <v-chip href="https://github.com/metaclips">
+                  <v-chip @click="downloadSession(chat.message)">
                     <b
                       >Class session recording by {{ message.name }}. Click to
                       download.</b
@@ -651,6 +651,10 @@ export default Vue.extend({
     revealTextField: function () {
       this.showFileInput = false;
       this.showTextField = true;
+    },
+
+    downloadSession: function (link: string) {
+      window.open(link, "_blank");
     },
   },
 

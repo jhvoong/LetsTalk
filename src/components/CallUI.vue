@@ -100,11 +100,11 @@ export default Vue.extend({
   props: {
     isCallPublisher: Boolean,
 
-    changeVideo: Function,
     startDesktopSharing: Function,
     stopDesktopSharing: Function,
-    endCallSession: Function,
+    changeVideo: Function,
     changeAudio: Function,
+    endCallSession: Function,
   },
 
   data: () => ({
@@ -129,7 +129,7 @@ export default Vue.extend({
       if (!this.isDesktopShared) {
         this.startDesktopSharing();
       } else {
-        this.stopDesktopSharing();
+        this.stopDesktopSharing(this.videoOn);
       }
 
       this.isDesktopShared = !this.isDesktopShared;
