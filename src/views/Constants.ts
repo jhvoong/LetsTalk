@@ -23,6 +23,7 @@ export const WSMessageType = {
     EndClassSession: "EndClassSession",
     Negotiate: "Negotiate",
     RenegotiateSDP: "RenegotiateSDP",
+    ClassSessionError: "ClassSessionError",
 }
 
 export const DefaultChunkSize = 125 * 1024

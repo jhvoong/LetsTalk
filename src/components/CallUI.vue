@@ -110,8 +110,8 @@ export default Vue.extend({
   data: () => ({
     showVideoOptions: false,
     isDesktopShared: false,
-    videoOn: false,
-    audioOn: false,
+    videoOn: true,
+    audioOn: true,
     fullScreen: false,
 
     videoIcon: "mdi-video",
