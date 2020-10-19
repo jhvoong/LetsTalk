@@ -26,7 +26,7 @@
           >
         </v-col>
 
-        <v-col cols="12" sm="6">
+        <v-col cols="12" md="5">
           <v-text-field
             v-model="email"
             outlined

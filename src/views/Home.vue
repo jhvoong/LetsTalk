@@ -1,27 +1,30 @@
 <template>
-  <div style="height: 100%; width: 100%" fill-height>
-    <CallUI
-      v-if="callUI"
-      :endCallSession="endCallSession"
-      :changeAudio="changeAudio"
-      :changeVideo="changeVideo"
-      :isCallPublisher="isPublisher"
-      :startDesktopSharing="startDesktopSharing"
-      :stopDesktopSharing="stopDesktopSharing"
-    />
-    <div v-else>
+  <v-row no-gutters class="fill-height">
+    <v-col cols="12" v-if="callUI">
+      <CallUI
+        :endCallSession="endCallSession"
+        :changeAudio="changeAudio"
+        :changeVideo="changeVideo"
+        :isCallPublisher="isPublisher"
+        :startDesktopSharing="startDesktopSharing"
+        :stopDesktopSharing="stopDesktopSharing"
+      />
+    </v-col>
+
+    <v-col cols="12" v-else>
       <v-row no-gutters class="fill-height">
-        <v-col cols="1">
+        <v-col :cols="$vuetify.breakpoint.smAndDown ? '2' : '1'">
           <SideBar
             :activateAddRoomDialog="activateAddRoomDialog"
             :activateNotificationDialog="activateNotificationDialog"
             :deactivateAllDialogs="deactivateAllDialogs"
             :unreadNotifications="unreadNotificationsCount"
             :unreadRoomMessages="unreadRoomMessageCount"
+            :showAvailableRooms="showAvailableRooms"
           />
         </v-col>
 
-        <v-col cols="11">
+        <v-col :cols="$vuetify.breakpoint.smAndDown ? '10' : '11'">
           <v-row
             style="height: 100%"
             align="center"
@@ -128,6 +131,32 @@
             </v-card>
           </v-row>
 
+          <v-row v-else-if="$vuetify.breakpoint.smAndDown" no-gutters>
+            <RoomsPage
+              v-if="showAvailableRoomsPage"
+              :indexOfCurrentViewedRoom="indexOfCurrentViewedRoom"
+              :recentChatPreview="recentChatPreview"
+              :changeViewedRoomIndex="changeViewedRoomIndex"
+              :joinedRooms="joinedRooms"
+              :sendWSMessage="sendWSMessage"
+              :unreadRoomMessages="unreadRoomMessages"
+            />
+
+            <ChatPage
+              v-else
+              :initiateFile="initiateFile"
+              :fileUploadDownload="fileUploadDownload"
+              :associates="usersOnline"
+              :clearFetchedUsers="clearFetchedUsers"
+              :fetchedUsers="fetchedUsers"
+              :sendWSMessage="sendWSMessage"
+              :currentViewedRoom="currentViewedRoom"
+              :changeDownloadStatus="changeDownloadStatus"
+              :startCallSession="startCallSession"
+              :joinCallSession="joinCallSession"
+            />
+          </v-row>
+
           <v-row v-else no-gutters>
             <v-col cols="3">
               <RoomsPage
@@ -158,9 +187,9 @@
           </v-row>
         </v-col>
       </v-row>
-    </div>
+    </v-col>
 
-    <v-dialog style="z-index: 2" persistent width="400px" v-model="dialog">
+    <v-dialog persistent width="400px" v-model="dialog">
       <v-card>
         <v-card-text>
           <div align="center" justify="center">
@@ -189,7 +218,7 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-  </div>
+  </v-row>
 </template>
 
 <script lang="ts">
@@ -266,6 +295,7 @@ export default Vue.extend({
     isPublisher: false,
     socketClosed: false,
     dialog: false,
+    showAvailableRoomsPage: true,
 
     indexOfCurrentViewedRoom: 0,
     unreadRoomMessageCount: 0,
@@ -273,214 +303,29 @@ export default Vue.extend({
   }),
 
   methods: {
-    connectWebsocket: function () {
-      // Verify login, if token is specified.
-      if (store.state.token == "") {
-        router.push("/login");
-        return;
-      }
-
-      const URL: string = process.env.VUE_APP_BACKEND_SERVER;
-      const URLs = URL.split("https://");
-
-      console.log("Connecting websocket");
-
-      // Probably write a test for this.
-      if (URLs.length == 0) {
-        router.push("/login");
-        return;
-      }
-
-      socket = new WebSocket(
-        "wss://" + URLs[1] + "/ws?token=" + store.state.token
-      );
-
-      socket.onmessage = (event: MessageEvent) => {
-        const jsonContent = JSON.parse(event.data);
-
-        switch (jsonContent.msgType) {
-          case WSMessageType.UnauthorizedAccess:
-            this.onUnAuthorizedAccess();
-            break;
-
-          case WSMessageType.SearchUser:
-            this.fetchedUsers = jsonContent.fetchedUsers;
-            console.log(this.fetchedUsers);
-            break;
-
-          case WSMessageType.WebsocketOpen:
-            this.onWebsocketOpen(
-              jsonContent.joinedRooms,
-              jsonContent.joinRequests
-            );
-            this.usersOnline = jsonContent.associates;
-            break;
-
-          case WSMessageType.RequestMessages:
-            if (!this.showChatPage) {
-              this.showChatPage = true;
-            }
-
-            this.onRequestMessages(jsonContent.roomPageDetails);
-            break;
-
-          case WSMessageType.JoinRoom:
-            this.onJoinRoom(jsonContent);
-            break;
-
-          case WSMessageType.NewMessage:
-            this.onNewMessage(jsonContent);
-            break;
-
-          case WSMessageType.SentRoomRequest:
-            this.onSentRoomRequest(jsonContent);
-            break;
-
-          case WSMessageType.OnlineStatus:
-            if (this.usersOnline[jsonContent.userID]) {
-              this.usersOnline[jsonContent.userID].isOnline =
-                jsonContent.status;
-            }
-            break;
-
-          case WSMessageType.ExitRoom:
-            this.onExitRoom(jsonContent);
-            break;
-
-          case WSMessageType.UploadFileChunk:
-            this.onUploadFileChunks(jsonContent);
-            break;
-
-          case WSMessageType.FileUploadSuccess:
-            this.broadcastFileToRoom(jsonContent);
-            break;
-
-          case WSMessageType.UploadFileError:
-            if (this.$children.length > 2) {
-              this.$children[2].$emit("onUploadError");
-            }
-            this.dialogError = "File upload error.";
-            this.dialog = true;
-            break;
-
-          case WSMessageType.FileRequestDownload:
-            this.onRequestDownload(jsonContent);
-            break;
-
-          case WSMessageType.DownloadFileChunk:
-            console.log("Downloading");
-            this.onDownloadFileChunk(jsonContent);
-            break;
-
-          case WSMessageType.ClassSessionError:
-            this.dialogError = jsonContent.errorDetails;
-            this.dialog = true;
-            break;
-
-          case WSMessageType.ClassSession:
-            if (this.currentViewedRoom.roomID === jsonContent.roomID) {
-              this.currentViewedRoom.messages.push({
-                type: MessageType.ClassSession,
-                name: jsonContent.name,
-                userID: jsonContent.userID,
-                hash: jsonContent.sessionID,
-                index: this.currentViewedRoom.messages.length + 1,
-                roomID: jsonContent.roomID,
-                message: "",
-              });
-              this.scrollToBottomOfChatPage();
-            }
-            break;
-
-          case WSMessageType.Negotiate:
-            if (peerConnection) {
-              console.log("Negotiating peer connection");
-
-              try {
-                peerConnection.setRemoteDescription(
-                  new RTCSessionDescription({
-                    type: "answer",
-                    sdp: jsonContent.sdp,
-                  })
-                );
-              } catch (e) {
-                console.log("Error setting remote description");
-                this.dialogError = "Error setting peer remote description.";
-                this.dialog = true;
-              }
-            }
-            break;
-
-          case WSMessageType.RenegotiateSDP:
-            console.log("Renegotiating SDP");
-
-            if (peerConnection && jsonContent.sessionID !== "") {
-              peerConnection.setRemoteDescription(
-                new RTCSessionDescription({
-                  type: "offer",
-                  sdp: jsonContent.sdp,
-                })
-              );
-
-              peerConnection
-                .createAnswer()
-                .then((sdp) => {
-                  peerConnection.setLocalDescription(sdp).then(() => {
-                    const message = {
-                      msgType: "RenegotiateSDP",
-                      sdp: sdp.sdp,
-                      userID: this.userID,
-                    };
-
-                    socket.send(JSON.stringify(message));
-                  });
-                })
-                .catch((e) => {
-                  console.log("Error renegotiating peerconnection, error: ", e);
-                  this.dialogError = "Error renegotiating peer connection.";
-                  this.dialog = true;
-                });
-            }
-            break;
-        }
-      };
-
-      socket.onerror = (event: Event) => {
-        // Reconnect Websocket if not UnAuthorized.
-        console.log("Websocket errored.", event);
-
-        this.dialogError = "Websocket connection error.";
-        this.dialog = true;
-        this.socketClosed = true;
-      };
-
-      socket.onopen = () => {
-        console.log("Websocket open.");
-        this.socketClosed = false;
-        this.dialog = false;
-
-        // Fetch users content from API.
-        // Contents that are to be fetched from API are, Registered rooms and room request.
-        const message = {
-          msgType: WSMessageType.WebsocketOpen,
-          userID: this.userID,
-        };
-
-        socket.send(JSON.stringify(message));
-      };
-
-      socket.onclose = (closeEvent: CloseEvent) => {
-        console.log("Websocket closed.", closeEvent);
-        this.socketClosed = true;
-
-        this.dialog = true;
-        this.dialogError = "Websocket disconnected. Reconnecting.";
-      };
-    },
-
     onUnAuthorizedAccess: function () {
       router.push("/login");
       socket.close();
+    },
+
+    activateAddRoomDialog: function () {
+      this.showAddRoomDialog = true;
+      this.showNotificationDialog = false;
+    },
+
+    activateNotificationDialog: function () {
+      this.showNotificationDialog = true;
+      this.showAddRoomDialog = false;
+    },
+
+    deactivateAllDialogs: function () {
+      this.showAddRoomDialog = false;
+      this.showNotificationDialog = false;
+    },
+
+    // Switch between available room page and chat page if user is on mobile.
+    showAvailableRooms: function () {
+      this.showAvailableRoomsPage = true;
     },
 
     onWebsocketOpen: function (
@@ -696,23 +541,8 @@ export default Vue.extend({
       this.newRoomName = "";
     },
 
-    activateAddRoomDialog: function () {
-      this.showAddRoomDialog = true;
-      this.showNotificationDialog = false;
-    },
-
     clearFetchedUsers: function () {
       this.fetchedUsers = [];
-    },
-
-    activateNotificationDialog: function () {
-      this.showNotificationDialog = true;
-      this.showAddRoomDialog = false;
-    },
-
-    deactivateAllDialogs: function () {
-      this.showAddRoomDialog = false;
-      this.showNotificationDialog = false;
     },
 
     sendWSMessage: function (message: string) {
@@ -1072,7 +902,7 @@ export default Vue.extend({
           return;
         }
 
-        const mediaStreamTrack = [videoTrack, audioTrack];
+        const mediaStreamTrack = [videoTrack];
         stream = new MediaStream(mediaStreamTrack);
 
         el.srcObject = stream;
@@ -1155,8 +985,12 @@ export default Vue.extend({
         }
       };
 
-      const MediaConstraints = { audio: true };
+      const MediaConstraints = {
+        audio: true,
+      };
+
       this.getUserMedia(MediaConstraints, (e: MediaStream) => {
+        console.log("Adding audio track");
         audioTrack = e.getAudioTracks()[0];
         audioTransceiver = peerConnection.addTransceiver(audioTrack, {
           direction: "sendrecv",
@@ -1172,8 +1006,7 @@ export default Vue.extend({
           return;
         }
 
-        const mediaStreamTrack = [videoTrack, audioTrack];
-        stream = new MediaStream(mediaStreamTrack);
+        stream = new MediaStream();
 
         el.srcObject = stream;
         el.autoplay = true;
@@ -1327,6 +1160,213 @@ export default Vue.extend({
       for (let i = 0; i < tracks.length; i++) {
         stream.addTrack(tracks[i]);
       }
+    },
+
+    connectWebsocket: function () {
+      // Verify login, if token is specified.
+      if (store.state.token == "") {
+        router.push("/login");
+        return;
+      }
+
+      const URL: string = process.env.VUE_APP_BACKEND_SERVER;
+      const URLs = URL.split("https://");
+
+      console.log("Connecting websocket");
+
+      // Probably write a test for this.
+      if (URLs.length == 0) {
+        router.push("/login");
+        return;
+      }
+
+      socket = new WebSocket(
+        "wss://" + URLs[1] + "/ws?token=" + store.state.token
+      );
+
+      socket.onmessage = (event: MessageEvent) => {
+        const jsonContent = JSON.parse(event.data);
+
+        switch (jsonContent.msgType) {
+          case WSMessageType.UnauthorizedAccess:
+            this.onUnAuthorizedAccess();
+            break;
+
+          case WSMessageType.SearchUser:
+            this.fetchedUsers = jsonContent.fetchedUsers;
+            console.log(this.fetchedUsers);
+            break;
+
+          case WSMessageType.WebsocketOpen:
+            this.onWebsocketOpen(
+              jsonContent.joinedRooms,
+              jsonContent.joinRequests
+            );
+            this.usersOnline = jsonContent.associates;
+            break;
+
+          case WSMessageType.RequestMessages:
+            if (!this.showChatPage) {
+              this.showChatPage = true;
+            }
+
+            this.showAvailableRoomsPage = false;
+
+            this.onRequestMessages(jsonContent.roomPageDetails);
+            break;
+
+          case WSMessageType.JoinRoom:
+            this.onJoinRoom(jsonContent);
+            break;
+
+          case WSMessageType.NewMessage:
+            this.onNewMessage(jsonContent);
+            break;
+
+          case WSMessageType.SentRoomRequest:
+            this.onSentRoomRequest(jsonContent);
+            break;
+
+          case WSMessageType.OnlineStatus:
+            if (this.usersOnline[jsonContent.userID]) {
+              this.usersOnline[jsonContent.userID].isOnline =
+                jsonContent.status;
+            }
+            break;
+
+          case WSMessageType.ExitRoom:
+            this.onExitRoom(jsonContent);
+            break;
+
+          case WSMessageType.UploadFileChunk:
+            this.onUploadFileChunks(jsonContent);
+            break;
+
+          case WSMessageType.FileUploadSuccess:
+            this.broadcastFileToRoom(jsonContent);
+            break;
+
+          case WSMessageType.UploadFileError:
+            if (this.$children.length > 2) {
+              this.$children[2].$emit("onUploadError");
+            }
+            this.dialogError = "File upload error.";
+            this.dialog = true;
+            break;
+
+          case WSMessageType.FileRequestDownload:
+            this.onRequestDownload(jsonContent);
+            break;
+
+          case WSMessageType.DownloadFileChunk:
+            console.log("Downloading");
+            this.onDownloadFileChunk(jsonContent);
+            break;
+
+          case WSMessageType.ClassSessionError:
+            this.dialogError = jsonContent.errorDetails;
+            this.dialog = true;
+            break;
+
+          case WSMessageType.ClassSession:
+            if (this.currentViewedRoom.roomID === jsonContent.roomID) {
+              this.currentViewedRoom.messages.push({
+                type: MessageType.ClassSession,
+                name: jsonContent.name,
+                userID: jsonContent.userID,
+                hash: jsonContent.sessionID,
+                index: this.currentViewedRoom.messages.length + 1,
+                roomID: jsonContent.roomID,
+                message: "",
+              });
+              this.scrollToBottomOfChatPage();
+            }
+            break;
+
+          case WSMessageType.Negotiate:
+            if (peerConnection) {
+              console.log("Negotiating peer connection");
+
+              try {
+                peerConnection.setRemoteDescription(
+                  new RTCSessionDescription({
+                    type: "answer",
+                    sdp: jsonContent.sdp,
+                  })
+                );
+              } catch (e) {
+                console.log("Error setting remote description");
+                this.dialogError = "Error setting peer remote description.";
+                this.dialog = true;
+              }
+            }
+            break;
+
+          case WSMessageType.RenegotiateSDP:
+            console.log("Renegotiating SDP");
+
+            if (peerConnection && jsonContent.sessionID !== "") {
+              peerConnection.setRemoteDescription(
+                new RTCSessionDescription({
+                  type: "offer",
+                  sdp: jsonContent.sdp,
+                })
+              );
+
+              peerConnection
+                .createAnswer()
+                .then((sdp) => {
+                  peerConnection.setLocalDescription(sdp).then(() => {
+                    const message = {
+                      msgType: "RenegotiateSDP",
+                      sdp: sdp.sdp,
+                      userID: this.userID,
+                    };
+
+                    socket.send(JSON.stringify(message));
+                  });
+                })
+                .catch((e) => {
+                  console.log("Error renegotiating peerconnection, error: ", e);
+                  this.dialogError = "Error renegotiating peer connection.";
+                  this.dialog = true;
+                });
+            }
+            break;
+        }
+      };
+
+      socket.onerror = (event: Event) => {
+        // Reconnect Websocket if not UnAuthorized.
+        console.log("Websocket errored.", event);
+
+        this.dialogError = "Websocket connection error.";
+        this.dialog = true;
+        this.socketClosed = true;
+      };
+
+      socket.onopen = () => {
+        console.log("Websocket open.");
+        this.socketClosed = false;
+        this.dialog = false;
+
+        // Fetch users content from API.
+        // Contents that are to be fetched from API are, Registered rooms and room request.
+        const message = {
+          msgType: WSMessageType.WebsocketOpen,
+          userID: this.userID,
+        };
+
+        socket.send(JSON.stringify(message));
+      };
+
+      socket.onclose = (closeEvent: CloseEvent) => {
+        console.log("Websocket closed.", closeEvent);
+        this.socketClosed = true;
+
+        this.dialog = true;
+        this.dialogError = "Websocket disconnected. Reconnecting.";
+      };
     },
   },
 

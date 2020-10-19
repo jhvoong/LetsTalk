@@ -1,10 +1,11 @@
 <template>
-  <v-row no-gutters style="height: 100vh">
+  <v-row no-gutters>
     <v-col cols="12" style="height: 10vh">
-      <v-app-bar tile flat height="100%" width="100%">
-        <v-app-bar-nav-icon class="mx-5">
+      <v-app-bar tile flat height="80vh">
+        <v-app-bar-nav-icon>
           <v-avatar>
             <v-img
+              class="mx-2"
               :src="
                 currentViewedRoom.roomIcon
                   ? currentViewedRoom.roomIcon
@@ -14,7 +15,10 @@
           </v-avatar>
         </v-app-bar-nav-icon>
 
-        <v-toolbar-title>
+        <v-toolbar-title
+          style="width: 28vw"
+          class="d-inline-block text--secondary"
+        >
           <b>{{ currentViewedRoom.roomName }}</b>
         </v-toolbar-title>
 
@@ -23,13 +27,17 @@
         <v-menu
           v-model="showAddUsersDialog"
           left
-          rounded="r-xl"
+          rounded
           :close-on-content-click="false"
-          nudge-width="400"
           offset-y
         >
           <template v-slot:activator="{ on, attrs }">
-            <v-btn class="mx-2" v-bind="attrs" v-on="on" icon x-large>
+            <v-btn
+              v-bind="attrs"
+              v-on="on"
+              icon
+              :x-large="!$vuetify.breakpoint.smAndDown"
+            >
               <v-icon>mdi-account-multiple-plus-outline</v-icon>
             </v-btn>
           </template>
@@ -82,7 +90,11 @@
           </v-card>
         </v-menu>
 
-        <v-btn @click="startCallSession" class="mx-2" icon x-large>
+        <v-btn
+          @click="startCallSession"
+          icon
+          :x-large="!$vuetify.breakpoint.smAndDown"
+        >
           <v-icon>mdi-video</v-icon>
         </v-btn>
 
@@ -90,12 +102,16 @@
           v-model="showOnlineUsersDialog"
           left
           :close-on-content-click="false"
-          rounded="r-xl"
-          nudge-width="400"
+          nudge-width="300"
           offset-y
         >
           <template v-slot:activator="{ on, attrs }">
-            <v-btn class="mx-2" v-bind="attrs" v-on="on" icon x-large>
+            <v-btn
+              v-bind="attrs"
+              v-on="on"
+              icon
+              :x-large="!$vuetify.breakpoint.smAndDown"
+            >
               <v-icon>mdi-information</v-icon>
             </v-btn>
           </template>
@@ -150,7 +166,7 @@
       </v-app-bar>
     </v-col>
 
-    <v-col cols="12" style="height: 75vh">
+    <v-col cols="12" style="height: 78vh">
       <v-container
         id="messages"
         class="overflow-y-auto scroll-behavior-smooth"
@@ -224,6 +240,8 @@
                     "
                   >
                     <b
+                      style="max-width: 60vw"
+                      class="d-inline-block text--secondary"
                       >{{ message.message }} sent by {{ message.name }} [{{
                         message.userID
                       }}]. Click to download.</b
@@ -235,15 +253,21 @@
               <v-col v-if="message.type === messageType.Info" cols="12">
                 <div align="center">
                   <v-chip>
-                    <b>{{ message.message }}.</b>
+                    <b
+                      style="max-width: 60vw"
+                      class="d-inline-block text--secondary"
+                      >{{ message.message }}.</b
+                    >
                   </v-chip>
                 </div>
               </v-col>
 
               <v-col v-if="message.type === messageType.ClassSession" cols="12">
                 <div align="center">
-                  <v-chip @click="joinCallSession()">
+                  <v-chip @click="joinCallSession(message)">
                     <b
+                      style="max-width: 60vw"
+                      class="d-inline-block text--secondary"
                       >Class session started by {{ message.name }}. Click to
                       join.</b
                     >
@@ -258,6 +282,8 @@
                 <div align="center">
                   <v-chip @click="downloadSession(chat.message)">
                     <b
+                      style="max-width: 60vw"
+                      class="d-inline-block text--secondary"
                       >Class session recording by {{ message.name }}. Click to
                       download.</b
                     >

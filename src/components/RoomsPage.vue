@@ -1,51 +1,52 @@
 <template>
-  <v-container fluid>
-    <v-row style="height: 25vh; justify-content: center;">
-      <v-col cols="12" sm="10">
-        <v-text-field
-          rounded
-          filled
-          prepend-inner-icon="mdi-magnify"
-          flat
-          placeholder="Search for conversations"
-        ></v-text-field>
-      </v-col>
+  <v-row no-gutters style="justify-content: center">
+    <v-col class="my-3 mx-5" cols="12" sm="10">
+      <v-text-field
+        rounded
+        filled
+        prepend-inner-icon="mdi-magnify"
+        flat
+        placeholder="Search for conversations"
+      ></v-text-field>
+    </v-col>
 
-      <v-col cols="12" class="text-center">
-        <v-btn
-          :outlined="currentRoomFilter==joinedRoomFilter.All"
-          @click="currentRoomFilter=joinedRoomFilter.All"
-          text
-          rounded
-        >{{joinedRoomFilter.All}}</v-btn>
+    <v-col cols="12" class="text-center">
+      <v-btn
+        :outlined="currentRoomFilter == joinedRoomFilter.All"
+        @click="currentRoomFilter = joinedRoomFilter.All"
+        text
+        rounded
+        >{{ joinedRoomFilter.All }}</v-btn
+      >
 
-        <v-btn
-          :outlined="currentRoomFilter==joinedRoomFilter.Read"
-          @click="currentRoomFilter=joinedRoomFilter.Read"
-          text
-          rounded
-        >{{joinedRoomFilter.Read}}</v-btn>
+      <v-btn
+        :outlined="currentRoomFilter == joinedRoomFilter.Read"
+        @click="currentRoomFilter = joinedRoomFilter.Read"
+        text
+        rounded
+        >{{ joinedRoomFilter.Read }}</v-btn
+      >
 
-        <v-btn
-          :outlined="currentRoomFilter==joinedRoomFilter.Unread"
-          @click="currentRoomFilter=joinedRoomFilter.Unread"
-          text
-          rounded
-        >{{joinedRoomFilter.Unread}}</v-btn>
-      </v-col>
+      <v-btn
+        :outlined="currentRoomFilter == joinedRoomFilter.Unread"
+        @click="currentRoomFilter = joinedRoomFilter.Unread"
+        text
+        rounded
+        >{{ joinedRoomFilter.Unread }}</v-btn
+      >
+    </v-col>
 
-      <v-col cols="12">
-        <v-subheader>
-          <b>Discussions</b>
-        </v-subheader>
-      </v-col>
-    </v-row>
+    <v-col cols="12">
+      <v-subheader>
+        <b>Discussions</b>
+      </v-subheader>
+    </v-col>
 
-    <v-container style="max-height: 72vh;" class="overflow-y-auto" cols="12">
+    <v-container style="height: 70vh" class="overflow-y-auto" cols="12">
       <v-list nav tile dense three-line>
         <v-list-item-group v-model="roomIndex" mandatory>
           <v-list-item
-            v-for="(joinedRoom,index) in filteredRooms"
+            v-for="(joinedRoom, index) in filteredRooms"
             :key="index"
             @click="loadChatContent(joinedRoom.roomID)"
           >
@@ -55,12 +56,22 @@
                 overlap
                 bottom
                 dot
-                :value="unreadRoomMessages[joinedRoom.roomID]?unreadRoomMessages[joinedRoom.roomID]:false"
+                :value="
+                  unreadRoomMessages[joinedRoom.roomID]
+                    ? unreadRoomMessages[joinedRoom.roomID]
+                    : false
+                "
                 offset-x="10"
                 offset-y="10"
               >
                 <v-avatar size="30">
-                  <v-img :src="joinedRoom.roomIcon?joinedRoom.icon:require('../assets/unilag.svg')"></v-img>
+                  <v-img
+                    :src="
+                      joinedRoom.roomIcon
+                        ? joinedRoom.icon
+                        : require('../assets/unilag.svg')
+                    "
+                  ></v-img>
                 </v-avatar>
               </v-badge>
             </v-list-item-avatar>
@@ -73,19 +84,22 @@
                     class="d-inline-block text-truncate"
                     style="width: 70%"
                     justify="start"
-                  >{{joinedRoom.roomName}}</v-col>
+                    >{{ joinedRoom.roomName }}</v-col
+                  >
                 </v-row>
               </v-list-item-title>
 
-              <v-list-item-subtitle
-                class="d-inline-block text-truncate"
-              >{{recentChatPreview[joinedRoom.roomID]?recentChatPreview[joinedRoom.roomID]:""}}</v-list-item-subtitle>
+              <v-list-item-subtitle class="d-inline-block text-truncate">{{
+                recentChatPreview[joinedRoom.roomID]
+                  ? recentChatPreview[joinedRoom.roomID]
+                  : ""
+              }}</v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>
         </v-list-item-group>
       </v-list>
     </v-container>
-  </v-container>
+  </v-row>
 </template>
 
 <script lang="ts">

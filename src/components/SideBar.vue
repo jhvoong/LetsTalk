@@ -11,32 +11,59 @@
         <v-col cols="12">
           <v-row>
             <v-col class="my-2" cols="12">
-              <v-badge bordered overlap :content="unreadRoomMessages" :value="unreadRoomMessages">
-                <v-btn @click="onRoom" icon>
+              <v-badge
+                bordered
+                overlap
+                :content="unreadRoomMessages"
+                :value="unreadRoomMessages"
+              >
+                <v-btn
+                  @click="onRoom"
+                  :x-large="!$vuetify.breakpoint.smAndDown"
+                  icon
+                >
                   <v-icon
-                    :color="highlightedSidebarOption=='Rooms'?'blue':''"
-                    x-large
-                  >mdi-message-outline</v-icon>
+                    :x-large="!$vuetify.breakpoint.smAndDown"
+                    :color="highlightedSidebarOption == 'Rooms' ? 'blue' : ''"
+                    >mdi-message-outline</v-icon
+                  >
                 </v-btn>
               </v-badge>
             </v-col>
 
             <v-col class="my-2" cols="12">
-              <v-btn @click="onAddRoom" x-large icon>
+              <v-btn
+                :x-large="!$vuetify.breakpoint.smAndDown"
+                @click="onAddRoom"
+                icon
+              >
                 <v-icon
-                  :color="highlightedSidebarOption=='AddRoom'?'blue':''"
-                  x-large
-                >mdi-message-plus</v-icon>
+                  :color="highlightedSidebarOption == 'AddRoom' ? 'blue' : ''"
+                  :x-large="!$vuetify.breakpoint.smAndDown"
+                  >mdi-message-plus</v-icon
+                >
               </v-btn>
             </v-col>
 
             <v-col class="my-2" cols="12">
-              <v-badge bordered overlap :content="unreadNotifications" :value="unreadNotifications">
-                <v-btn @click="onNotification" icon>
+              <v-badge
+                bordered
+                overlap
+                :content="unreadNotifications"
+                :value="unreadNotifications"
+              >
+                <v-btn
+                  :x-large="!$vuetify.breakpoint.smAndDown"
+                  @click="onNotification"
+                  icon
+                >
                   <v-icon
-                    :color="highlightedSidebarOption=='Notifications'?'blue':''"
-                    x-large
-                  >mdi-bell-outline</v-icon>
+                    :color="
+                      highlightedSidebarOption == 'Notifications' ? 'blue' : ''
+                    "
+                    :x-large="!$vuetify.breakpoint.smAndDown"
+                    >mdi-bell-outline</v-icon
+                  >
                 </v-btn>
               </v-badge>
             </v-col>
@@ -46,20 +73,36 @@
         <v-col class="mt-auto" cols="12">
           <v-row>
             <v-col class="my-2" cols="12">
-              <v-btn @click="changeTheme" x-large icon>
-                <v-icon :color="themeColor" x-large>mdi-moon-waxing-crescent</v-icon>
+              <v-btn
+                :x-large="!$vuetify.breakpoint.smAndDown"
+                @click="changeTheme"
+                icon
+              >
+                <v-icon
+                  :color="themeColor"
+                  :x-large="!$vuetify.breakpoint.smAndDown"
+                  >mdi-moon-waxing-crescent</v-icon
+                >
               </v-btn>
             </v-col>
 
             <v-col class="my-2" cols="12">
-              <v-btn x-large icon>
-                <v-icon x-large>mdi-cog</v-icon>
+              <v-btn :x-large="!$vuetify.breakpoint.smAndDown" icon>
+                <v-icon :x-large="!$vuetify.breakpoint.smAndDown"
+                  >mdi-cog</v-icon
+                >
               </v-btn>
             </v-col>
 
             <v-col class="my-2" cols="12">
-              <v-btn @click="logOff" x-large icon>
-                <v-icon x-large>mdi-power-standby</v-icon>
+              <v-btn
+                :x-large="!$vuetify.breakpoint.smAndDown"
+                @click="logOff"
+                icon
+              >
+                <v-icon :x-large="!$vuetify.breakpoint.smAndDown"
+                  >mdi-power-standby</v-icon
+                >
               </v-btn>
             </v-col>
           </v-row>
@@ -84,6 +127,7 @@ export default Vue.extend({
     activateAddRoomDialog: Function,
     activateNotificationDialog: Function,
     deactivateAllDialogs: Function,
+    showAvailableRooms: Function,
 
     unreadRoomMessages: Number,
     unreadNotifications: Number,
@@ -115,6 +159,7 @@ export default Vue.extend({
     onRoom: function () {
       this.highlightedSidebarOption = SideBarOptions.Rooms;
       this.deactivateAllDialogs();
+      this.showAvailableRooms();
     },
 
     onAddRoom: function () {
