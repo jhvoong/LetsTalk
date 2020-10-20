@@ -922,11 +922,13 @@ export default Vue.extend({
         event.onaddtrack = (event) => {
           console.log("On add track called for start video session.");
           stream.addTrack(event.track);
+          console.log(event.track.id);
         };
 
         event.onremovetrack = (event) => {
           console.log("On remove track called for start video session.");
           stream.removeTrack(event.track);
+          console.log(event.track.id);
         };
 
         transceiver.receiver.track.onmute = () =>
@@ -992,6 +994,7 @@ export default Vue.extend({
       this.getUserMedia(MediaConstraints, (e: MediaStream) => {
         console.log("Adding audio track");
         audioTrack = e.getAudioTracks()[0];
+        audioTrack.enabled = true;
         audioTransceiver = peerConnection.addTransceiver(audioTrack, {
           direction: "sendrecv",
         });
@@ -1027,11 +1030,13 @@ export default Vue.extend({
         event.onaddtrack = (event) => {
           console.log("On add track called for join video session");
           stream.addTrack(event.track);
+          console.log(event.track.id);
         };
 
         event.onremovetrack = (event) => {
           console.log("On remove track called for join video session.");
           stream.removeTrack(event.track);
+          console.log(event.track.id);
         };
 
         transceiver.receiver.track.onmute = () =>
@@ -1052,7 +1057,6 @@ export default Vue.extend({
 
     endCallSession: function () {
       this.callUI = false;
-      this.isPublisher = false;
 
       if (audioTrack) {
         audioTrack.enabled = false;
@@ -1066,13 +1070,16 @@ export default Vue.extend({
         videoTransceiver.stop();
       }
 
-      peerConnection.close();
+      if (peerConnection) peerConnection.close();
       // Send websocket close message to server.
       if (this.isPublisher) {
         const message = {
           msgType: WSMessageType.EndClassSession,
           userID: this.userID,
         };
+
+        this.isPublisher = false;
+        console.log("sending websocket peer close message");
 
         socket.send(JSON.stringify(message));
       }

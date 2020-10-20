@@ -91,7 +91,7 @@ func (s *classSessionPeerConnections) startClassSession(msg []byte, user string)
 
 	peerConnection.OnConnectionStateChange(func(cc webrtc.PeerConnectionState) {
 		log.Printf("PeerConnection State has changed %s \n", cc.String())
-		if cc == webrtc.PeerConnectionStateFailed {
+		if cc == webrtc.PeerConnectionStateFailed || cc == webrtc.PeerConnectionStateClosed {
 			// Since this is the publisher, all video and audio tracks related to the session
 			// should be cleared and all peer connections closed.
 			videoAudioWriter.close()
@@ -343,7 +343,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 	peerConnection.OnConnectionStateChange(func(cc webrtc.PeerConnectionState) {
 		fmt.Printf("PeerConnection State has changed for joined class %s \n", cc.String())
 
-		if cc == webrtc.PeerConnectionStateFailed {
+		if cc == webrtc.PeerConnectionStateFailed || cc == webrtc.PeerConnectionStateClosed {
 			// Remove user from connected users list.
 			s.connectedUsersMutex.Lock()
 			connectedUsers := s.connectedUsers[sdp.ClassSessionID]
@@ -358,7 +358,6 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 					break
 				}
 			}
-
 			s.connectedUsers[sdp.ClassSessionID] = connectedUsers
 			s.connectedUsersMutex.Unlock()
 
@@ -409,7 +408,7 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 	})
 
 	peerConnection.OnSignalingStateChange(func(cc webrtc.SignalingState) {
-		log.Println("koin class session singaling", cc.String())
+		log.Println("join class session singaling", cc.String())
 	})
 
 	peerConnection.OnTrack(func(remoteTrack *webrtc.Track, receiver *webrtc.RTPReceiver) {
@@ -471,7 +470,8 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 
 					senderData := rtpSenderData{
 						userID: track.Label(), // Label has users ID.
-						sender: sender}
+						sender: sender,
+					}
 
 					s.audioTrackSender[track] = append(s.audioTrackSender[track], senderData)
 
@@ -523,15 +523,14 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 			fmt.Println("Starting audio writing")
 		}()
 
-		rtpBuf := make([]byte, 1400)
 		for {
-			i, err := remoteTrack.Read(rtpBuf)
+			rtp, err := remoteTrack.ReadRTP()
 			if err != nil {
 				log.Println("error reading remote track at join session", err)
 				break
 			}
 
-			_, err = audioTrack.Write(rtpBuf[:i])
+			err = audioTrack.WriteRTP(rtp)
 			if err != nil && !errors.Is(err, io.ErrClosedPipe) {
 				log.Println("publisher video packet writed break", err)
 				break
@@ -549,9 +548,9 @@ func (s *classSessionPeerConnections) joinClassSession(msg []byte, user string) 
 }
 
 // endClassSession ends class session and broadcasts end session to all connected users.
-func (s *classSessionPeerConnections) endClassSession(user string) {
+func (s *classSessionPeerConnections) endClassSession(author string) {
 	s.peerConnectionMutexes.Lock()
-	peerConnection, ok := s.peerConnection[user]
+	peerConnection, ok := s.peerConnection[author]
 	if !ok {
 		log.Println("invalid user on end class session.")
 		return
@@ -576,10 +575,14 @@ func (s *classSessionPeerConnections) endClassSession(user string) {
 	}
 
 	s.connectedUsersMutex.Lock()
-	users := s.connectedUsers[user]
+	users := s.connectedUsers[author]
 	s.connectedUsersMutex.Unlock()
 
 	for _, user := range users {
+		if user == author {
+			continue
+		}
+
 		HubConstruct.sendMessage(jsonContent, user)
 	}
 }

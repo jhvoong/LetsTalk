@@ -149,7 +149,7 @@
                           ? associates[onlineUser].name
                           : ""
                       }}
-                      [{{ onlineUser }}]</b
+                      {{ onlineUser }}</b
                     >
                   </span>
                 </template>

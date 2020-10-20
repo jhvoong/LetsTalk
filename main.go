@@ -46,7 +46,7 @@ func main() {
 	handler := cors.New(cors.Options{
 		Debug:          true,
 		AllowedOrigins: values.Config.CorsAllowedOrigins,
-		AllowedMethods: []string{"GET", "OPTIONS", "POST"},
+		AllowedMethods: []string{"GET", "POST"},
 		AllowedHeaders: []string{"Content-Type"},
 	}).Handler(router)
 
@@ -55,7 +55,6 @@ func main() {
 		if err := http.ListenAndServeTLS(":"+port, values.Config.TLS.CertPath, values.Config.TLS.KeyPath, handler); err != nil {
 			log.Fatalln(err)
 		}
-
 		return
 	}
 
