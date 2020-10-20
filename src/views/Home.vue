@@ -1175,7 +1175,7 @@ export default Vue.extend({
       console.log("Connecting websocket");
 
       // Probably write a test for this.
-      if (URLs.length == 0) {
+      if (URLs.length != 2) {
         router.push("/login");
         return;
       }
