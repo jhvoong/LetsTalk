@@ -12,7 +12,7 @@ import (
 )
 
 func TestDatabase(t *testing.T) {
-	if err := values.LoadConfiguration("../config.json"); err != nil {
+	if err := values.LoadConfiguration("../../config.json"); err != nil {
 		t.Error(err)
 	}
 

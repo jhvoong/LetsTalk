@@ -13,13 +13,8 @@
         "CertPath": "cert.pem",
         "KeyPath": "key.pem"
     },
-    "CorsAllowedOrigins": [
-        "https://127.0.0.1:8081",
-        "https://192.168.1.101:8081",
-        "https://192.168.43.140:8081"
-    ],
     "DbHost": "mongodb://localhost:27017",
-    "DbName": "unilagDatabase",
+    "DbName": "LetsTalkDB",
     "DropboxToken": "",
     "EnableClassSessionRecord": true,
     "Port": "8080"
