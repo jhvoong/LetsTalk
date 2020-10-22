@@ -176,7 +176,7 @@ type classSessionPeerConnections struct {
 	publisherVideoTracks  map[string]*webrtc.Track // mapped sessionID to track
 	publisherTrackMutexes *sync.RWMutex
 
-	audioTracks       map[string][]*webrtc.Track // mapped sessionID to track
+	audioTrack        map[string]*webrtc.Track // mapped userID to track
 	audioTrackSender  map[*webrtc.Track][]rtpSenderData
 	audioTrackMutexes *sync.RWMutex
 

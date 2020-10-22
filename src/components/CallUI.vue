@@ -38,9 +38,50 @@
         v-if="showVideoOptions"
       >
         <v-col cols="12" class="mx-5 d-flex justify-end">
-          <v-btn fab dark small bottom left v-if="showVideoOptions">
-            <v-icon>mdi-account-circle</v-icon>
-          </v-btn>
+          <v-menu
+            v-model="showConnectedUsers"
+            left
+            :close-on-content-click="false"
+            nudge-width="300"
+            offset-y
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                v-bind="attrs"
+                v-on="on"
+                icon
+                dark
+                right
+                :x-large="!$vuetify.breakpoint.smAndDown"
+              >
+                <v-icon>mdi-account-circle</v-icon>
+              </v-btn>
+            </template>
+
+            <v-card>
+              <v-row class="mx-10">
+                <v-col cols="12"> </v-col>
+                <v-col
+                  cols="12"
+                  v-for="(onlineUsers, index) in connectedUsers"
+                  :key="index"
+                >
+                  <v-badge
+                    inline
+                    dot
+                    :color="onlineUsers.isOnline ? 'green' : 'red'"
+                  ></v-badge>
+
+                  <span>
+                    <b class="mx-2 d-inline-block text--secondary">{{
+                      onlineUsers.name
+                    }}</b>
+                  </span>
+                </v-col>
+                <v-col cols="12"> </v-col>
+              </v-row>
+            </v-card>
+          </v-menu>
         </v-col>
 
         <v-col cols="12" class="my-10 d-flex align-end">
@@ -94,11 +135,13 @@
 
 <script lang="ts">
 import Vue from "vue";
+import { UsersOnline } from "../views/Types";
 export default Vue.extend({
   name: "CallUI",
 
   props: {
     isCallPublisher: Boolean,
+    connectedUsers: {} as UsersOnline,
 
     startDesktopSharing: Function,
     stopDesktopSharing: Function,
@@ -112,6 +155,7 @@ export default Vue.extend({
     isDesktopShared: false,
     videoOn: true,
     audioOn: true,
+    showConnectedUsers: false,
     fullScreen: false,
 
     videoIcon: "mdi-video",

@@ -116,7 +116,7 @@
             </v-btn>
           </template>
 
-          <v-card>
+          <v-card max-width="50wh">
             <v-row class="mx-10">
               <v-col cols="12"></v-col>
               <v-col
@@ -143,7 +143,7 @@
                     "
                   ></v-badge>
                   <span class="mx-4">
-                    <b
+                    <b class="d-inline-block text--secondary"
                       >{{
                         associates[onlineUser]
                           ? associates[onlineUser].name

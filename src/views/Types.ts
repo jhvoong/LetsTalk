@@ -110,7 +110,6 @@ export interface ExitRoomDetails {
 
 export interface FileChunk {
     fileName: string;
-
 }
 
 export interface AssociateStatus {

@@ -8,6 +8,7 @@
         :isCallPublisher="isPublisher"
         :startDesktopSharing="startDesktopSharing"
         :stopDesktopSharing="stopDesktopSharing"
+        :connectedUsers="classSessionConnectedUsers"
       />
     </v-col>
 
@@ -280,6 +281,7 @@ export default Vue.extend({
     unreadRoomMessages: {} as UnreadRooms,
     recentChatPreview: {} as RecentChatPreview,
     usersOnline: {} as UsersOnline,
+    classSessionConnectedUsers: {} as UsersOnline,
     fileUploadDownload: {} as FileDownload,
 
     userID: store.state.email,
@@ -469,6 +471,12 @@ export default Vue.extend({
     updateChatRoomPage: function () {
       setTimeout(() => {
         this.$children[2].$forceUpdate();
+      }, 0);
+    },
+
+    updateCallPage: function () {
+      setTimeout(() => {
+        this.$children[3].$forceUpdate();
       }, 0);
     },
 
@@ -836,6 +844,11 @@ export default Vue.extend({
     startCallSession: function () {
       this.callUI = true;
       this.isPublisher = true;
+      this.classSessionConnectedUsers = {};
+      this.classSessionConnectedUsers[this.userID] = {
+        name: this.userID,
+        isOnline: true,
+      };
 
       peerConnection = new RTCPeerConnection({
         iceServers: [
@@ -846,7 +859,7 @@ export default Vue.extend({
       });
 
       peerConnection.oniceconnectionstatechange = () => {
-        console.log(peerConnection.iceConnectionState);
+        console.log("ICE connection state", peerConnection.iceConnectionState);
 
         if (peerConnection.iceConnectionState === "failed") {
           // Show error page so that users can choose to disconnect call.
@@ -934,15 +947,33 @@ export default Vue.extend({
           console.log(event.track.id);
         };
 
-        transceiver.receiver.track.onmute = () =>
+        transceiver.receiver.track.onmute = () => {
           console.log("Track muted for start session.");
+        };
 
-        transceiver.receiver.track.onended = () =>
+        transceiver.receiver.track.onended = () => {
           console.log("Track ended for start session");
+
+          const id = event.id;
+
+          this.classSessionConnectedUsers[id] = {
+            name: id,
+            isOnline: false,
+          };
+
+          this.updateCallPage();
+        };
 
         transceiver.receiver.track.onunmute = () => {
           console.log("Track started for start session.");
           console.log("track", transceiver, "\n event", event);
+
+          const id = event.id;
+          this.classSessionConnectedUsers[id] = {
+            name: id,
+            isOnline: true,
+          };
+
           stream.addTrack(transceiver.receiver.track);
         };
       };
@@ -951,6 +982,7 @@ export default Vue.extend({
     joinCallSession: function (sessionData: Message) {
       this.callUI = true;
       this.isPublisher = false;
+      this.classSessionConnectedUsers = {};
 
       peerConnection = new RTCPeerConnection({
         iceServers: [
@@ -1043,23 +1075,37 @@ export default Vue.extend({
           console.log("track ID", event.track.id);
         };
 
-        event.onremovetrack = (event) => {
+        event.onremovetrack = (track) => {
           console.log("On remove track called for join video session.");
-          stream.removeTrack(event.track);
-          console.log(event.track.id);
+          stream.removeTrack(track.track);
+          console.log(track.track.id);
+
+          const id = track.track.id;
+          delete this.classSessionConnectedUsers[id];
+
+          this.updateCallPage();
         };
 
         transceiver.receiver.track.onmute = () =>
           console.log("Track muted for join session");
 
-        transceiver.receiver.track.onended = () =>
+        transceiver.receiver.track.onended = () => {
           console.log("Track ended for Join session");
+        };
 
         transceiver.receiver.track.onunmute = () => {
-          if (transceiver.receiver.track.kind === "video")
-            console.log("Track unmuted");
+          if (transceiver.receiver.track.kind === "audio") {
+            const id = transceiver.receiver.track.id;
+            this.classSessionConnectedUsers[id] = {
+              name: event.id,
+              isOnline: true,
+            };
+          }
+
+          console.log("Track unmuted");
 
           console.log("Track started for Join session");
+
           console.log("track", transceiver, "\n event", event);
           stream.addTrack(transceiver.receiver.track);
         };
@@ -1083,17 +1129,15 @@ export default Vue.extend({
 
       if (peerConnection) peerConnection.close();
       // Send websocket close message to server.
-      if (this.isPublisher) {
-        const message = {
-          msgType: WSMessageType.EndClassSession,
-          userID: this.userID,
-        };
+      const message = {
+        msgType: WSMessageType.EndClassSession,
+        userID: this.userID,
+      };
 
-        this.isPublisher = false;
-        console.log("sending websocket peer close message");
+      this.isPublisher = false;
+      console.log("sending websocket peer close message");
 
-        socket.send(JSON.stringify(message));
-      }
+      socket.send(JSON.stringify(message));
     },
 
     getUserMedia: function (
