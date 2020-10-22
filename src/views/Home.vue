@@ -856,9 +856,12 @@ export default Vue.extend({
       };
 
       peerConnection.onicecandidate = (event) => {
+        console.log("New candidate added", event);
+
         if (
           event.candidate === null &&
           peerConnection.localDescription &&
+          peerConnection.localDescription.sdp &&
           peerConnection.iceConnectionState === "new"
         ) {
           const message = {
@@ -933,10 +936,13 @@ export default Vue.extend({
 
         transceiver.receiver.track.onmute = () =>
           console.log("Track muted for start session.");
+
         transceiver.receiver.track.onended = () =>
           console.log("Track ended for start session");
+
         transceiver.receiver.track.onunmute = () => {
           console.log("Track started for start session.");
+          console.log("track", transceiver, "\n event", event);
           stream.addTrack(transceiver.receiver.track);
         };
       };
@@ -968,9 +974,12 @@ export default Vue.extend({
       };
 
       peerConnection.onicecandidate = (event) => {
+        console.log("A new user added", event);
+
         if (
           event.candidate == null &&
           peerConnection.localDescription &&
+          peerConnection.localDescription.sdp &&
           peerConnection.iceConnectionState === "new"
         ) {
           console.log("Calling join class session");
@@ -980,8 +989,8 @@ export default Vue.extend({
             sdp: peerConnection.localDescription.sdp,
             roomID: this.currentViewedRoom.roomID,
             userID: this.userID,
-            author: this.userID,
             sessionID: sessionData.hash,
+            publisherID: sessionData.userID,
           };
           socket.send(JSON.stringify(message));
         }
@@ -1014,6 +1023,7 @@ export default Vue.extend({
         el.srcObject = stream;
         el.autoplay = true;
 
+        console.log("Sending to server to create offer.");
         peerConnection
           .createOffer()
           .then((sdp) => {
@@ -1030,7 +1040,7 @@ export default Vue.extend({
         event.onaddtrack = (event) => {
           console.log("On add track called for join video session");
           stream.addTrack(event.track);
-          console.log(event.track.id);
+          console.log("track ID", event.track.id);
         };
 
         event.onremovetrack = (event) => {
@@ -1050,6 +1060,7 @@ export default Vue.extend({
             console.log("Track unmuted");
 
           console.log("Track started for Join session");
+          console.log("track", transceiver, "\n event", event);
           stream.addTrack(transceiver.receiver.track);
         };
       };
@@ -1290,7 +1301,7 @@ export default Vue.extend({
             }
             break;
 
-          case WSMessageType.Negotiate:
+          case WSMessageType.NegotiateSDP:
             if (peerConnection) {
               console.log("Negotiating peer connection");
 
@@ -1302,8 +1313,12 @@ export default Vue.extend({
                   })
                 );
               } catch (e) {
-                console.log("Error setting remote description");
-                this.dialogError = "Error setting peer remote description.";
+                console.log(
+                  "Error setting remote description on negotiating",
+                  e
+                );
+                this.dialogError =
+                  "Error setting peer remote description on negotiating.";
                 this.dialog = true;
               }
             }
@@ -1325,7 +1340,7 @@ export default Vue.extend({
                 .then((sdp) => {
                   peerConnection.setLocalDescription(sdp).then(() => {
                     const message = {
-                      msgType: "RenegotiateSDP",
+                      msgType: WSMessageType.RenegotiateSDP,
                       sdp: sdp.sdp,
                       userID: this.userID,
                     };

@@ -258,7 +258,7 @@ func (s subscription) readPump(user string) {
 		case values.EndClassSession:
 			classSessions.endClassSession(user)
 
-		case values.NegotiateSDP:
+		case values.RenegotiateSDP:
 			sdpConstruct{}.acceptRenegotiation(msg)
 
 		case values.SearchUserMsgType:

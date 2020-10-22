@@ -42,7 +42,8 @@ const (
 
 	StartClassSession = "StartClassSession"
 	JoinClassSession  = "JoinClassSession"
-	NegotiateSDP      = "RenegotiateSDP"
+	NegotiateSDP      = "NegotiateSDP"
+	RenegotiateSDP    = "RenegotiateSDP"
 	ClassSessionError = "ClassSessionError"
 	EndClassSession   = "EndClassSession"
 )

@@ -206,6 +206,7 @@ type sdpConstruct struct {
 	MsgType        string `json:"msgType"`
 	ClassSessionID string `json:"sessionID"`
 	AuthorName     string `json:"name"`
+	PublisherID    string `json:"publisherID"`
 	UserID         string `json:"userID"`
 	RoomID         string `json:"roomID"`
 	SDP            string `json:"sdp"`

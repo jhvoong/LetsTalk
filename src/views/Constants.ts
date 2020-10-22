@@ -21,7 +21,7 @@ export const WSMessageType = {
     ClassSessionLink: "ClassSessionLink",
     JoinClassSession: "JoinClassSession",
     EndClassSession: "EndClassSession",
-    Negotiate: "Negotiate",
+    NegotiateSDP: "NegotiateSDP",
     RenegotiateSDP: "RenegotiateSDP",
     ClassSessionError: "ClassSessionError",
 }
