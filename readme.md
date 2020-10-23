@@ -76,11 +76,10 @@ npm run serve
 ```
 
 ## Docker Installation
-To use docker
+There are individual docker files for [API](api.Dockerfile) and [Frontend](ui.Dockerfile), there's also a docker compose file.
 
 ```bash
-docker build -t letstalk .
-docker run --publish 8080:8080 --rm letstalk
+docker-compose up
 ```
 
 # Configuration
@@ -91,18 +90,12 @@ To generate TLS certificate for test using tls.
 
 ` openssl req -nodes -x509 -newkey rsa:4096 -keyout key.pem -subj "/C=US/ST=Oregon/L=Portland/O=Company Name/OU=Org/CN=example.com" -out cert.pem -days 365 `
 
-- The default ICE servers in use if none is specified in config is: `stun:stun.l.google.com:19302`
+- The default ICE server in use if none is specified in config is: `stun:stun.l.google.com:19302`
 
 - If no TLS key and cert path is specified, HTTP is used.
 
-- If Class session record is enabled, call sessions are recorded and uploaded to file server if a token is provided or file database.
+- If Class session record is enabled, call sessions are recorded and uploaded to Dropbox server if a dropbox token is provided or file database.
 
-- To generate a Dropbox token, 
-
-
-# Browser support
-
-- To update when voice call is implemented
 
 # License
 
