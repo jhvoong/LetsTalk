@@ -16,8 +16,6 @@ services:
     container_name: LetsTalkUI
     volumes:
         - ui:/usr/src/ui/
-    ports:
-        - "8081:8081"
 
 volumes:
     api:

@@ -5,8 +5,8 @@ COPY . .
 RUN go mod download
 RUN go build
 
-ENV PORT=8081
+ENV PORT=8080
 
-EXPOSE 8080
+EXPOSE ${PORT}
 
 ENTRYPOINT ./LetsTalk
