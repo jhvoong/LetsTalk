@@ -15,7 +15,6 @@ func TestConfig(t *testing.T) {
 	assert.Equal(t, "mongodb://localhost:27017", Config.DbHost)
 	assert.Equal(t, "LetsTalkDB", Config.DbName)
 	assert.Equal(t, true, Config.EnableClassSessionRecord)
-	assert.Equal(t, "8080", Config.Port)
 	assert.Equal(t, len(Config.ICEServers), 1)
 	assert.Equal(t, []string{"stun:stun.l.google.com:19302"}, Config.ICEServers[0].URLs)
 	assert.Equal(t, "cert.pem", Config.TLS.CertPath)

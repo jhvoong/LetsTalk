@@ -17,5 +17,5 @@
     "DbName": "LetsTalkDB",
     "DropboxToken": "",
     "EnableClassSessionRecord": true,
-    "Port": "8080"
+    "Port": ""
 }

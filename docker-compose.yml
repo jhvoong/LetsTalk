@@ -1,0 +1,29 @@
+version: '3'
+services:
+
+  API:
+    build: ./api.Dockerfile
+    container_name: LetsTalkAPI
+    environment:
+        - PORT=8081
+    ports:
+        - ${PORT}
+    volumes:
+        - api:/usr/src/app/
+
+  UI:
+    build: ./ui.Dockerfile
+    container_name: LetsTalkUI
+    environment:
+        - VUE_APP_BACKEND_SERVER=https://192.168.43.140:8080
+        - KEY=key.pem
+        - CERT=cert.pem
+        - PORT=8081
+    volumes:
+        - ui:/usr/src/ui/
+    ports:
+      - ${PORT}
+
+volumes:
+    api:
+    ui:
