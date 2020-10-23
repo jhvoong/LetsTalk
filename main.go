@@ -2,16 +2,17 @@ package main
 
 import (
 	"encoding/gob"
-	"log"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
+	log "github.com/sirupsen/logrus"
 
-	"github.com/metaclips/LetsTalk/controller"
-	"github.com/metaclips/LetsTalk/model"
-	"github.com/metaclips/LetsTalk/values"
+	"github.com/julienschmidt/httprouter"
+	"github.com/metaclips/LetsTalk/backend/controller"
+	"github.com/metaclips/LetsTalk/backend/model"
+	"github.com/metaclips/LetsTalk/backend/values"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -25,15 +26,10 @@ func main() {
 
 	router := httprouter.New()
 
-	router.GET("/", controller.HomePage)
 	router.GET("/ws", controller.ServeWs)
-	router.GET("/login", controller.HomePageLoginGet)
-	router.GET("/admin/login", controller.AdminLoginGET)
-	router.GET("/admin", controller.AdminPage)
 
 	router.POST("/login", controller.HomePageLoginPost)
-	router.POST("/admin/login", controller.AdminLoginPOST)
-	router.POST("/admin/upload", controller.UploadUser)
+	router.POST("/register", controller.RegisterUserPost)
 
 	port := values.Config.Port
 	if port == "" {
@@ -44,19 +40,25 @@ func main() {
 	}
 
 	router.ServeFiles("/assets/*filepath", http.Dir("./views/assets"))
-	log.Println("Webserver UP")
+	log.Infoln("Webserver UP")
+
+	handler := cors.New(cors.Options{
+		Debug:          true,
+		AllowedOrigins: values.Config.CorsAllowedOrigins,
+		AllowedMethods: []string{"GET", "POST"},
+		AllowedHeaders: []string{"Content-Type"},
+	}).Handler(router)
 
 	// Optional use of TLS due to Heroku serving TLS at low level.
 	if values.Config.TLS.CertPath != "" && values.Config.TLS.KeyPath != "" {
-		if err := http.ListenAndServeTLS(":"+port, values.Config.TLS.CertPath, values.Config.TLS.KeyPath, router); err != nil {
+		if err := http.ListenAndServeTLS(":"+port, values.Config.TLS.CertPath, values.Config.TLS.KeyPath, handler); err != nil {
 			log.Fatalln(err)
 		}
-
 		return
 	}
 
 	// Note: without HTTPS users wont be able to login as SetCookie uses Secure flag.
-	if err := http.ListenAndServe(":"+port, router); err != nil {
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatalln(err)
 	}
 }

@@ -1,13 +1,7 @@
 .DS_Store
 node_modules
 /dist
-
-# ssl cert
-*.pem
-
-# debug
-*debug_bin*
-
+Licence 
 
 # local env files
 .env.local
