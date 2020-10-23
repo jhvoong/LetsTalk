@@ -9,11 +9,10 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/rs/cors"
-
 	"github.com/metaclips/LetsTalk/backend/controller"
 	"github.com/metaclips/LetsTalk/backend/model"
 	"github.com/metaclips/LetsTalk/backend/values"
+	"github.com/rs/cors"
 )
 
 func main() {

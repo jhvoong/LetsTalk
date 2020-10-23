@@ -1,9 +1,11 @@
 FROM golang:latest
 WORKDIR /api
 
-COPY go.mod go.sum main.go ./
+COPY . .
 RUN go mod download
 RUN go build
+
+ENV PORT=8081
 
 EXPOSE 8080
 
