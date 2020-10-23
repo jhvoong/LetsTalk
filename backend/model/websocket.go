@@ -54,15 +54,12 @@ func (h *hub) Run() {
 	Upgrader.CheckOrigin = func(r *http.Request) bool {
 		host := r.Header.Get("Origin")
 
-		if r.TLS != nil && r.TLS.HandshakeComplete {
-			for _, allowdOrigin := range values.Config.CorsAllowedOrigins {
-				if host == allowdOrigin {
-					return true
-				}
+		for _, allowdOrigin := range values.Config.CorsAllowedOrigins {
+			if host == allowdOrigin {
+				return true
 			}
-
-			return false
 		}
+		log.Debugln("Host is not allowed:", host)
 
 		return false
 	}
